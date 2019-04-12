@@ -8,11 +8,6 @@ class Cube extends Drawable {
   normals: Float32Array;
   center: vec4;
 
-  offsets: Float32Array;
-  cols1: Float32Array;
-  cols2: Float32Array;
-  cols3: Float32Array;
-
   constructor(center: vec3, public side: number) {
     super(); // Call the constructor of the super class. This is required.
     this.center = vec4.fromValues(center[0], center[1], center[2], 1);
@@ -108,10 +103,6 @@ class Cube extends Drawable {
     this.generateIdx();
     this.generatePos();
     this.generateNor();
-    this.generateTransform1();
-    this.generateTransform2();
-    this.generateTransform3();
-    this.generateTranslate();
 
     this.count = this.indices.length;
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.bufIdx);
@@ -124,24 +115,6 @@ class Cube extends Drawable {
     gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
 
     console.log(`Created cube`);
-  }
-
-  setInstanceVBOs(cols1: Float32Array, cols2: Float32Array, cols3: Float32Array, offsets: Float32Array) {
-    // this.colors = colors;
-    this.offsets = offsets;
-    // this.transforms = transforms;
-    this.cols1 = cols1;
-    this.cols2 = cols2;
-    this.cols3 = cols3;
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform1);
-    gl.bufferData(gl.ARRAY_BUFFER, this.cols1, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform2);
-    gl.bufferData(gl.ARRAY_BUFFER, this.cols2, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform3);
-    gl.bufferData(gl.ARRAY_BUFFER, this.cols3, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTranslate);
-    gl.bufferData(gl.ARRAY_BUFFER, this.offsets, gl.STATIC_DRAW);
   }
 };
 

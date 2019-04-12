@@ -1,4 +1,4 @@
-import {mat4, vec4, mat3} from 'gl-matrix';
+import {mat4, vec4} from 'gl-matrix';
 import Drawable from './Drawable';
 import Camera from '../../Camera';
 import {gl} from '../../globals';
@@ -22,24 +22,18 @@ class OpenGLRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   }
 
-  // render(camera: Camera, prog: ShaderProgram, mapValues: number[], drawables: Array<Drawable>) {
-render(camera: Camera, prog: ShaderProgram, drawables: Array<Drawable>) {
-      let model = mat4.create();
+  render(camera: Camera, color: vec4, prog: ShaderProgram, drawables: Array<Drawable>) {
+    let model = mat4.create();
     let viewProj = mat4.create();
-    let color = vec4.fromValues(1, 0, 0, 1);
-    // Each column of the axes matrix is an axis. Right, Up, Forward.
-    let axes = mat3.fromValues(camera.right[0], camera.right[1], camera.right[2],
-                               camera.up[0], camera.up[1], camera.up[2],
-                               camera.forward[0], camera.forward[1], camera.forward[2]);
+    // let color = vec4.fromValues(1, 0, 0, 1);
 
-
-    prog.setEyeRefUp(camera.controls.eye, camera.controls.center, camera.controls.up);
-    // prog.setPopulationMap(mapValues);
     mat4.identity(model);
     mat4.multiply(viewProj, camera.projectionMatrix, camera.viewMatrix);
     prog.setModelMatrix(model);
     prog.setViewProjMatrix(viewProj);
-    prog.setCameraAxes(axes);
+    prog.setGeometryColor(color);
+    // prog.setTime(m_time);
+    prog.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
     for (let drawable of drawables) {
       prog.draw(drawable);

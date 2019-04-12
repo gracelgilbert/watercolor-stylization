@@ -29,8 +29,6 @@ class ScreenQuad extends Drawable {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.bufPos);
     gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
 
-    this.numInstances = 1;
-
     console.log(`Created ScreenQuad`);
   }
 };
