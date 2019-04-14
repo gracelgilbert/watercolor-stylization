@@ -174,7 +174,7 @@ void main()
                                                             // the model matrix.
 
     float a = 1.0;
-    vec4 offset = 0.03 * sin(vs_Pos * 30.0) * pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
+    vec4 offset = 0.02 * (sin(vs_Pos * 20.0) + sin((vs_Pos * 20.0) + 30.0)) * pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
 
 
     bleedAmount = pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.95, 6.0, 6.0, 6.0), 15.0);
