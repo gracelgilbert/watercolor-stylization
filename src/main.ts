@@ -8,6 +8,7 @@ import {setGL} from './globals';
 import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
 import Cube from './geometry/Cube';
 import {readTextFile} from './globals';
+import Mesh from './geometry/Mesh';
 
 
 // Define an object with application parameters and button callbacks
@@ -16,6 +17,7 @@ const controls = {
 };
 
 let cube: Cube;
+let sphere: Mesh;
 let ColorImage: WebGLTexture;
 let zBufferImage: WebGLTexture;
 let ControlImage: WebGLTexture;
@@ -42,6 +44,9 @@ let time: number = 0.0;
 function loadScene() {
   cube = new Cube(vec3.fromValues(0, 0, 0), 1);
   cube.create();
+  let obj0: string = readTextFile('./sphere.obj');
+  sphere = new Mesh(obj0, vec3.fromValues(0, 0, 0));
+  sphere.create();
 }
 
 function main() {
@@ -89,20 +94,20 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/color-frag.glsl')),
   ]);
 
-  // const depth = new ShaderProgram([
-  //   new Shader(gl.VERTEX_SHADER, require('./shaders/color-vert.glsl')),
-  //   new Shader(gl.FRAGMENT_SHADER, require('./shaders/z-buffer-frag.glsl')),
-  // ]);
+  const depth = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/color-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/z-buffer-frag.glsl')),
+  ]);
 
-  // const control = new ShaderProgram([
-  //   new Shader(gl.VERTEX_SHADER, require('./shaders/color-vert.glsl')),
-  //   new Shader(gl.FRAGMENT_SHADER, require('./shaders/control-frag.glsl')),
-  // ]);
+  const control = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/color-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/control-frag.glsl')),
+  ]);
 
-  // const blur = new ShaderProgram([
-  //   new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
-  //   new Shader(gl.FRAGMENT_SHADER, require('./shaders/gaussian-frag.glsl')),
-  // ]);
+  const blur = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/gaussian-frag.glsl')),
+  ]);
 
   // const bilateral = new ShaderProgram([
   //   new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
@@ -176,6 +181,9 @@ function main() {
     createFrameBuffers();
     createRenderbuffers();
     
+    /*
+    FIRST PASS: COLOR
+    */
     // bind Color pass texture, fb, rb
     gl.bindTexture(gl.TEXTURE_2D, ColorImage);
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbColor);
@@ -186,9 +194,11 @@ function main() {
     fbrbSetup(ColorImage, fbColor, rbColor);
 
     // Render 3D Scene with Color:
-    renderer.render(camera, vec4.fromValues(1.0, 1.0, 0.0, 1.0), color, [cube]);
+    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), color, [sphere]);
 
-
+    /*
+    SECOND PASS: DEPTH MAP
+    */
     // bind Depth pass texture, fb, rb
     gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
@@ -199,20 +209,70 @@ function main() {
     fbrbSetup(zBufferImage, fbDepth, rbDepth);
 
     // Render 3D scene with Depth:
-    // renderer.render(camera, vec4.fromValues(1.0, 1.0, 0.0, 1.0), depth, [cube]);
+    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), depth, [sphere]);
 
+    /*
+    THIRD PASS: CONTROLS
+    */
+
+    // // bind Control pass texture, fb, rb
+    // gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
+    // gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
+
+    // // Setup texture, fb, rb
+    // textureSetup();
+    // fbrbSetup(ControlImage, fbControl, rbControl);
+
+    // // Render 3D scene with Control:
+    // renderer.render(camera, vec4.fromValues(1.0, 1.0, 0.0, 1.0), control, [sphere]);
+
+
+    /*
+    FOURTH PASS: GAUSSIAN BLUR
+    */
+
+    // bind blur pass texture, fb, rb
+    gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbBlur);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbBlur);
+
+    // Setup texture, fb, rb
+    textureSetup();
+    fbrbSetup(BlurredImage, fbBlur, rbBlur);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+    blur.setImage1();
+
+    // gl.activeTexture(gl.TEXTURE2);
+    // gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+    // blur.setImage2();
+    
+
+    // Render 3D scene with blur:
+    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), blur, [screenQuad]);
+
+    
     
 
     // bind to screen and bind texture
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+    gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+    stylization.setImage0();
+
+
+    // gl.activeTexture(gl.TEXTURE1);
+    // gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+    // stylization.setImage1();
+
 
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // render stylization to screen
-    renderer.render(camera, vec4.fromValues(1.0, 0.0, 1.0, 1.0), stylization,[screenQuad]);
+    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), stylization,[screenQuad]);
 
 
     stats.end();
