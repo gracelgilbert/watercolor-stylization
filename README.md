@@ -1,6 +1,6 @@
 # watercolor-stylization
 
-### Picture here
+![](images/Cover.png)
 
 ## Demo Link:
 https://gracelgilbert.github.io/watercolor-stylization/
