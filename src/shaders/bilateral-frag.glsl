@@ -65,7 +65,7 @@ void main() {
   }
 
   float avgBlur = totalBlur / 441.0;
-  float blurrAmount = clamp(pow(mix(0.0, 1.0, avgBlur * 2.0), 2.0), 0.0, 1.0);
+  float blurrAmount = clamp(pow(mix(0.0, 1.0, avgBlur * 2.0), 1.0), 0.0, 1.0);
   // if (controlSample.r < 0.20000001) {
   //   blurrAmount = 0.0;
   // }

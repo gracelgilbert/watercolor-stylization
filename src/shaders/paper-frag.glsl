@@ -141,7 +141,8 @@ float fbm3D(float x, float y, float z, float height, float xScale, float yScale,
 }        
 
 float getHeight(vec2 pos) {
-    float height = pow(1.0 - computeWorley(pos.x, pos.y, 1800.0, 1000.0), 0.3);
+    float height = 1.0 * pow(1.0 - computeWorley(pos.x, pos.y, 1800.0, 1000.0), 0.3);
+    height += 0.6 * (1.0 - pow(fbm(pos.x, pos.y, 1.0, 0.01, 0.01), 0.5));
     return height;
 }
 

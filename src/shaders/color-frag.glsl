@@ -165,7 +165,7 @@ void main()
         float u = fs_Pos.x * 0.05 + 0.5;
         float v = fs_Pos.y * 0.05 + 0.5 ;
 
-        vec4 paperColor = texture(u_Image1, vec2(u,v));
+        vec4 paperColor = texture(u_Image1, screenspace);
 
         // Calculate the diffuse term for Lambert shading
         // float diffuseTerm = 0.5 * (dot(normalize(fs_Nor), normalize(fs_LightVec)) + 1.0);
@@ -199,5 +199,6 @@ void main()
         // Compute final shaded color
         // out_Col = vec4(diffuseColor.rgb * lightIntensity, diffuseColor.a);
         out_Col = Ct;
+        // out_Col = vec4(screenspace, 0.0, 1.0);
         // out_Col = vec4(1.0, 1.0, 0.0, 1.0);
 }

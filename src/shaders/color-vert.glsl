@@ -218,6 +218,6 @@ void main()
 
     vec3 ndc = gl_Position.xyz / gl_Position.w; //perspective divide/normalize
     vec2 viewportCoord = ndc.xy * 0.5 + 0.5; //ndc is -1 to 1 in GL. scale for 0 to 1
-    vec2 screenspace = viewportCoord * u_Dimensions;
+    screenspace = viewportCoord ;
 
 }
