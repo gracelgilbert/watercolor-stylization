@@ -18,6 +18,8 @@ const controls = {
 
 let cube: Cube;
 let sphere: Mesh;
+let walls: Mesh;
+
 let ColorImage: WebGLTexture;
 let zBufferImage: WebGLTexture;
 let ControlImage: WebGLTexture;
@@ -50,6 +52,10 @@ function loadScene() {
   let obj0: string = readTextFile('./sphere.obj');
   sphere = new Mesh(obj0, vec3.fromValues(0, 0, 0));
   sphere.create();
+
+  let obj1: string = readTextFile('./Walls.obj');
+  walls = new Mesh(obj1, vec3.fromValues(0, 0, 0));
+  walls.create();
 }
 
 function main() {
@@ -226,7 +232,9 @@ function main() {
 
     // Render 3D Scene with Color:
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
-
+    color.setBleed(0.02);
+    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), color, [walls]);
+    color.setBleed(0.5);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), color, [sphere]);
 
 
@@ -244,8 +252,10 @@ function main() {
     fbrbSetup(zBufferImage, fbDepth, rbDepth);
 
     // Render 3D scene with Depth:
-    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), depth, [sphere]);
-
+    depth.setBleed(0.02);
+    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [walls]);
+    depth.setBleed(0.5);
+    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [sphere]);
     /*
     THIRD PASS: CONTROLS
     */
@@ -260,7 +270,10 @@ function main() {
     fbrbSetup(ControlImage, fbControl, rbControl);
 
     // Render 3D scene with Control:
-    renderer.render(camera, vec4.fromValues(1.0, 1.0, 0.0, 1.0), control, [sphere]);
+    control.setBleed(0.02);
+    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [walls]);
+    control.setBleed(0.5);
+    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [sphere]);
 
 
     /*

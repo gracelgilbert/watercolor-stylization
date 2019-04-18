@@ -36,6 +36,7 @@ class ShaderProgram {
   unifImage2: WebGLUniformLocation;
   unifImage3: WebGLUniformLocation;
   unifDimensions: WebGLUniformLocation;
+  unifBleedScale: WebGLUniformLocation;
 
 
   constructor(shaders: Array<Shader>) {
@@ -63,6 +64,7 @@ class ShaderProgram {
     this.unifImage2     = gl.getUniformLocation(this.prog, "u_Image2");
     this.unifImage3     = gl.getUniformLocation(this.prog, "u_Image3");
     this.unifDimensions = gl.getUniformLocation(this.prog, "u_Dimensions");
+    this.unifBleedScale = gl.getUniformLocation(this.prog, "u_BleedScale");
   }
 
   use() {
@@ -78,6 +80,15 @@ class ShaderProgram {
     if(this.unifTime != -1)
     {
       gl.uniform1i(this.unifTime, t);
+    }
+  }
+
+  setBleed(bleed: number) {
+    this.use();
+
+    if(this.unifBleedScale != -1)
+    {
+      gl.uniform1f(this.unifBleedScale, bleed);
     }
   }
 
