@@ -1,32 +1,19 @@
 #version 300 es
-
-// This is a fragment shader. If you've opened this file first, please
-// open and read lambert.vert.glsl before reading on.
-// Unlike the vertex shader, the fragment shader actually does compute
-// the shading of geometry. For every pixel in your program's output
-// screen, the fragment shader is run for every bit of geometry that
-// particular pixel overlaps. By implicitly interpolating the position
-// data passed into the fragment shader by the vertex shader, the fragment shader
-// can compute what color to apply to its pixel based on things like vertex
-// position, light position, and vertex color.
 precision highp float;
 
-uniform vec4 u_Color; // The color with which to render this instance of geometry.
-uniform sampler2D u_Image1; // Paper image
+uniform vec3 u_Eye, u_Ref, u_Up;
+uniform vec2 u_Dimensions;
+uniform sampler2D u_Image1;
 
-// These are the interpolated values out of the rasterizer, so you can't know
-// their specific values without knowing the vertices that contributed to them
-in vec4 fs_Nor;
-in vec4 fs_LightVec;
-in vec4 fs_Col;
-in vec4 fs_Pos;
-in float bleedAmount;
-in vec2 screenspace;
 
-out vec4 out_Col; // This is the final output color that you will see on your
-                  // screen for the pixel that is currently being processed.
-// layout(location = 0) out vec4 out_Col;
 
+const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
+                                        //the geometry in the fragment shader.
+uniform vec4 u_CameraPos;
+
+
+in vec2 fs_Pos;
+out vec4 out_Col;
 float random1( vec2 p , vec2 seed) {
   return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -141,7 +128,7 @@ float fbm(float x, float y, float height, float xScale, float yScale) {
 float fbm3D(float x, float y, float z, float height, float xScale, float yScale, float zScale) {
   float total = 0.f;
   float persistence = 0.5f;
-  int octaves = 4;
+  int octaves = 8;
   float freq = 2.0;
   float amp = 1.0;
   for (int i = 0; i < octaves; i++) {
@@ -151,50 +138,64 @@ float fbm3D(float x, float y, float z, float height, float xScale, float yScale,
     amp *= persistence;
   }
   return height * total;
-}   
+}        
+
+float getHeight(vec2 pos) {
+    float height = pow(1.0 - computeWorley(pos.x, pos.y, 1800.0, 1000.0), 0.3);
+    return height;
+}
+
+void main() {
+
+    float epsilon = 0.0001;    
 
 
-void main()
-{
-    // Material base color (before shading)
-        vec4 diffuseColor = u_Color;
+    float x = 0.5 * (fs_Pos.x + 1.0);
+    float y = 0.5 * (fs_Pos.y + 1.0);
+    vec2 position = vec2(x,y);
 
-        float x = 0.5 * (fs_Pos.x + 1.0);
-        float y = 0.5 * (fs_Pos.y + 1.0);
+    vec4 albedo = 2.5 * vec4(1.0, 0.99, 0.95, 1.0);
+    float height = getHeight(position);
 
-        vec4 paperColor = texture(u_Image1, screenspace);
+    vec2 posxP = position + vec2(epsilon, 0.0);
+    vec2 posxN = position - vec2(epsilon, 0.0);
 
-        // Calculate the diffuse term for Lambert shading
-        // float diffuseTerm = 0.5 * (dot(normalize(fs_Nor), normalize(fs_LightVec)) + 1.0);
+    vec2 posyP = position + vec2(0.0, epsilon);
+    vec2 posyN = position - vec2(0.0, epsilon);
+
+
+    float right = getHeight(posxP);
+    float left = getHeight(posxN);
+    float up = getHeight(posyP);
+    float down = getHeight(posyN);
+
+    float nor1 = 0.5 * (right - left);
+    float nor2 = 0.5 * (down - up);
+    float nor3 = 1.0;
+
+    // float dx = left - height;
+    // float dy = up - height;
+    // fs_gradientScale = 500.0 * pow(dx * dx + dy * dy, 0.4);
+
+    vec4 normal = vec4(nor1, nor2, nor3, 0.f);
+
+    vec4 fs_LightVec = normalize(lightPos);  // Compute the direction in which the light source lies
+
+
+    float diffuseTerm = dot(normalize(normal), normalize(fs_LightVec));
         // Avoid negative lighting values
         // diffuseTerm = clamp(diffuseTerm, 0, 1);
 
-        float dA = 1.0;
-        float c = 0.4;
-        float d = 0.8;
-        float DA = (clamp(dot(normalize(fs_LightVec), normalize(fs_Nor)), 0.0, 1.0) + (dA - 1.0)) / dA;
+    float ambientTerm = 0.1;
 
-        vec4 Cc = u_Color + (DA * c);
-        vec4 Cd = d * DA * (paperColor - Cc) + Cc;
+    float lightIntensity = diffuseTerm + ambientTerm;   //Add a small float value to the color multiplier
+                                                        //to simulate ambient lighting. This ensures that faces that are not
+                                                        //lit by our point light are not completely black.
 
-
-        float turbulenceCtrl = fbm3D(fs_Pos.x, fs_Pos.y, fs_Pos.z, 0.57, 3.0, 3.0, 3.0);
-
-        vec4 Ct = vec4(pow(Cd.r, 3.0 - (4.0 * turbulenceCtrl)), pow(Cd.g, 3.0 - (4.0 * turbulenceCtrl)), pow(Cd.b, 3.0 - (4.0 * turbulenceCtrl)), 1.0);
-        if (turbulenceCtrl >= 0.5) {
-            Ct = (turbulenceCtrl - 0.5) * 2.0 * (paperColor - Cd) + Cd;
-        }
+    out_Col = vec4(diffuseTerm * albedo.rgb, 1.0);
 
 
+    // accumColor = texture(u_Image1, vec2( x,  y));
+    // out_Col = vec4(albedo.rgb * height, 1.0);
 
-        // float ambientTerm = 0.1;
-
-        // float lightIntensity = diffuseTerm + ambientTerm;   //Add a small float value to the color multiplier
-                                                            //to simulate ambient lighting. This ensures that faces that are not
-                                                            //lit by our point light are not completely black.
-
-        // Compute final shaded color
-        // out_Col = vec4(diffuseColor.rgb * lightIntensity, diffuseColor.a);
-        out_Col = Ct;
-        // out_Col = vec4(1.0, 1.0, 0.0, 1.0);
 }

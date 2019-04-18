@@ -23,18 +23,21 @@ let zBufferImage: WebGLTexture;
 let ControlImage: WebGLTexture;
 let BlurredImage: WebGLTexture;
 let BleededImage: WebGLTexture;
+let PaperImage: WebGLTexture;
 
 let fbColor: WebGLFramebuffer;
 let fbDepth: WebGLFramebuffer;
 let fbControl: WebGLFramebuffer;
 let fbBlur: WebGLFramebuffer;
 let fbBilateral: WebGLFramebuffer;
+let fbPaper: WebGLFramebuffer;
 
 let rbColor: WebGLRenderbuffer;
 let rbDepth: WebGLRenderbuffer;
 let rbControl: WebGLRenderbuffer;
 let rbBlur: WebGLRenderbuffer;
 let rbBilateral: WebGLRenderbuffer;
+let rbPaper: WebGLRenderbuffer;
 
 
 
@@ -104,15 +107,20 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/control-frag.glsl')),
   ]);
 
+  const paper = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/paper-frag.glsl')),
+  ]);
+
   const blur = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/gaussian-frag.glsl')),
   ]);
 
-  // const bilateral = new ShaderProgram([
-  //   new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
-  //   new Shader(gl.FRAGMENT_SHADER, require('./shaders/bilateral-frag.glsl')),
-  // ]);
+  const bilateral = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/bilateral-frag.glsl')),
+  ]);
 
   const stylization = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
@@ -127,6 +135,8 @@ function main() {
     ControlImage = gl.createTexture();
     BlurredImage = gl.createTexture();
     BleededImage = gl.createTexture();
+    PaperImage = gl.createTexture();
+
   }
 
   function createFrameBuffers() {
@@ -135,6 +145,8 @@ function main() {
     fbControl = gl.createFramebuffer();
     fbBlur = gl.createFramebuffer();
     fbBilateral = gl.createFramebuffer();
+    fbPaper = gl.createFramebuffer();
+
   }
 
   function createRenderbuffers() {
@@ -143,6 +155,8 @@ function main() {
     rbControl = gl.createRenderbuffer();
     rbBlur = gl.createRenderbuffer();
     rbBilateral = gl.createRenderbuffer();
+    rbPaper = gl.createRenderbuffer();
+
   }
 
   function textureSetup() {
@@ -182,6 +196,19 @@ function main() {
     createRenderbuffers();
     
     /*
+    PAPER TEXTURE
+    */
+    // bind Paper pass texture, fb, rb
+    gl.bindTexture(gl.TEXTURE_2D, PaperImage);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbPaper);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbPaper);  
+    // Setup texture, fb, rb
+    textureSetup();
+    fbrbSetup(PaperImage, fbPaper, rbPaper);  
+    // Render 3D Scene with Color:
+    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
+
+    /*
     FIRST PASS: COLOR
     */
     // bind Color pass texture, fb, rb
@@ -193,8 +220,16 @@ function main() {
     textureSetup();
     fbrbSetup(ColorImage, fbColor, rbColor);
 
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, PaperImage);
+    color.setImage1();
+
     // Render 3D Scene with Color:
+    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
+
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), color, [sphere]);
+
+
 
     /*
     SECOND PASS: DEPTH MAP
@@ -215,17 +250,17 @@ function main() {
     THIRD PASS: CONTROLS
     */
 
-    // // bind Control pass texture, fb, rb
-    // gl.bindTexture(gl.TEXTURE_2D, ControlImage);
-    // gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
-    // gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
+    // bind Control pass texture, fb, rb
+    gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
 
-    // // Setup texture, fb, rb
-    // textureSetup();
-    // fbrbSetup(ControlImage, fbControl, rbControl);
+    // Setup texture, fb, rb
+    textureSetup();
+    fbrbSetup(ControlImage, fbControl, rbControl);
 
-    // // Render 3D scene with Control:
-    // renderer.render(camera, vec4.fromValues(1.0, 1.0, 0.0, 1.0), control, [sphere]);
+    // Render 3D scene with Control:
+    renderer.render(camera, vec4.fromValues(1.0, 1.0, 0.0, 1.0), control, [sphere]);
 
 
     /*
@@ -254,25 +289,60 @@ function main() {
     renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), blur, [screenQuad]);
 
     
+      /*
+    FIFTH PASS: BILATERAL BLUR
+    */
+
+    // bind bilateral pass texture, fb, rb
+    gl.bindTexture(gl.TEXTURE_2D, BleededImage);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbBilateral);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbBilateral);
+
+    // Setup texture, fb, rb
+    textureSetup();
+    fbrbSetup(BleededImage, fbBilateral, rbBilateral);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+    bilateral.setImage1();
+
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+    bilateral.setImage2();
+
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+    bilateral.setImage3();
     
+
+    // Render 3D scene with blur:
+    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), bilateral, [screenQuad]);
+
 
     // bind to screen and bind texture
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+    gl.bindTexture(gl.TEXTURE_2D, ColorImage);
     stylization.setImage0();
 
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+    stylization.setImage1();
 
-    // gl.activeTexture(gl.TEXTURE1);
-    // gl.bindTexture(gl.TEXTURE_2D, ColorImage);
-    // stylization.setImage1();
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, BleededImage);
+    stylization.setImage2();
 
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+    stylization.setImage3();
 
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // render stylization to screen
     renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), stylization,[screenQuad]);
+    // renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), paper,[screenQuad]);
 
 
     stats.end();

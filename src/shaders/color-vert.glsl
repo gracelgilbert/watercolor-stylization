@@ -14,6 +14,7 @@ uniform mat4 u_Model;       // The matrix that defines the transformation of the
 uniform mat4 u_ModelInvTr;  // The inverse transpose of the model matrix.
                             // This allows us to transform the object's normals properly
                             // if the object has been non-uniformly scaled.
+uniform vec2 u_Dimensions;
 
 uniform mat4 u_ViewProj;    // The matrix that defines the camera's transformation.
                             // We've written a static matrix for you to use for HW2,
@@ -30,8 +31,12 @@ out vec4 fs_Pos;
 out vec4 fs_Nor;            // The array of normals that has been transformed by u_ModelInvTr. This is implicitly passed to the fragment shader.
 out vec4 fs_LightVec;       // The direction in which our virtual light lies, relative to each vertex. This is implicitly passed to the fragment shader.
 out vec4 fs_Col;            // The color of each vertex. This is implicitly passed to the fragment shader.
+out vec2 screenspace;
 
 out float bleedAmount;
+out float edgeDarkening;
+
+out vec4 viewspace;
 
 const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
                                         //the geometry in the fragment shader.
@@ -162,6 +167,21 @@ float fbm3D(float x, float y, float z, float height, float xScale, float yScale,
   return height * total;
 }                                        
 
+float fbm3DHighOct(float x, float y, float z, float height, float xScale, float yScale, float zScale) {
+  float total = 0.f;
+  float persistence = 0.5f;
+  int octaves = 8;
+  float freq = 2.0;
+  float amp = 1.0;
+  for (int i = 0; i < octaves; i++) {
+    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;
+    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;
+    freq *= 2.0;
+    amp *= persistence;
+  }
+  return height * total;
+}     
+
 void main()
 {
     fs_Col = vs_Col;                         // Pass the vertex colors to the fragment shader for interpolation
@@ -177,15 +197,26 @@ void main()
     vec4 offset = 0.02 * (sin(vs_Pos * 20.0) + sin((vs_Pos * 20.0) + 30.0)) * pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
 
 
-    bleedAmount = pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.95, 6.0, 6.0, 6.0), 15.0);
-    offset += bleedAmount * fs_Nor;
+    bleedAmount = pow(fbm3D(-fs_Pos.x, -fs_Pos.y, fs_Pos.z, 1.0, 6.0, 6.0, 6.0), 15.0);
+    offset += 0.5 * bleedAmount * fs_Nor;
+    offset.w = 0.0;
+
+    edgeDarkening = pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 2.0, 2.0, 2.0), 5.0);
 
     vec4 modelposition = u_Model * vs_Pos + offset;   // Temporarily store the transformed vertex positions for use below
     // vec4 modelposition = u_Model * vs_Pos;   // Temporarily store the transformed vertex positions for use below
     fs_Pos = modelposition;
 
     fs_LightVec = normalize(lightPos - modelposition);  // Compute the direction in which the light source lies
+    viewspace = u_ViewProj * modelposition;
 
-    gl_Position = u_ViewProj * modelposition;// gl_Position is a built-in variable of OpenGL which is
+    
+
+    gl_Position = viewspace;// gl_Position is a built-in variable of OpenGL which is
                                              // used to render the final positions of the geometry's vertices
+
+    vec3 ndc = gl_Position.xyz / gl_Position.w; //perspective divide/normalize
+    vec2 viewportCoord = ndc.xy * 0.5 + 0.5; //ndc is -1 to 1 in GL. scale for 0 to 1
+    vec2 screenspace = viewportCoord * u_Dimensions;
+
 }

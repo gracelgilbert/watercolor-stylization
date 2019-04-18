@@ -3,7 +3,9 @@ precision highp float;
 
 uniform vec3 u_Eye, u_Ref, u_Up;
 uniform vec2 u_Dimensions;
-uniform sampler2D u_Image1;
+uniform sampler2D u_Image1; // Color
+uniform sampler2D u_Image2; // depth
+uniform sampler2D u_Image3; // control
 
 
 
@@ -38,17 +40,23 @@ void main() {
 
   float x = 0.5 * (fs_Pos.x + 1.0);
   float y = 0.5 * (fs_Pos.y + 1.0);
-  
-
   float pixDimx = 1.0 / float(u_Dimensions.x);
   float pixDimy = 1.0 / float(u_Dimensions.y);
 
+  vec4 colorSample = texture(u_Image1, vec2(x,y));
+  vec4 depthSample = texture(u_Image2, vec2(x,y));
+  vec4 controlSample = texture(u_Image3, vec2(x,y));
+
+
   vec4 accumColor = vec4(0.0);
 
+  float totalBlur = 0.0;
   int count = 0;
   for (int i = -10; i <= 10; i++) {
     for (int j = -10; j <= 10; j++) {
         vec4 curr_color = texture(u_Image1, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
+        vec4 currControl = texture(u_Image3, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
+        totalBlur += currControl.r;
         float scale = array[count];
         accumColor = accumColor + (scale * curr_color);
         count++;
@@ -56,7 +64,35 @@ void main() {
     }
   }
 
+  float avgBlur = totalBlur / 441.0;
+  float blurrAmount = clamp(pow(mix(0.0, 1.0, avgBlur * 2.0), 2.0), 0.0, 1.0);
+  // if (controlSample.r < 0.20000001) {
+  //   blurrAmount = 0.0;
+  // }
+
+  vec4 finalColor = mix(colorSample, accumColor, blurrAmount);
+  
+  // float T = 0.5;
+  // for (int i = -10; i <= 10; i++) {
+  //   if (true) { // This will sample control mask for bleeding parameter
+  //     bool bleed = false;
+  //     bool sourceBehind = false;
+  //     if (texture(u_Image2, vec2(x, y)).r - T > texture(u_Image2, vec2(x + float(i) * pixDimx, y)).r) {
+  //       sourceBehind = true;
+  //     }
+  //     if (true && sourceBehind) {
+  //       bleed = true;
+  //     }
+  //     if (true && !sourceBehind) {
+  //       bleed = true;
+  //     }
+  //     if (true) {
+  //       accumColor = accumColor + texture(u_Image1, vec2(x, y)) * array[i + 10];
+  //     }
+  //   }
+  // }
+
   // accumColor = texture(u_Image1, vec2( x,  y));
-  out_Col = vec4(accumColor.rgb, 1.0);
+  out_Col = vec4(finalColor.rgb, 1.0);
 
 }

@@ -15,6 +15,9 @@ precision highp float;
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
 in vec4 fs_Pos;
+in vec4 viewspace;
+uniform vec4 u_CameraPos;
+
 
 out vec4 out_Col; // This is the final output color that you will see on your
                   // screen for the pixel that is currently being processed.
@@ -23,8 +26,12 @@ out vec4 out_Col; // This is the final output color that you will see on your
 
 void main()
 {
-    float depth = 0.5 * fs_Pos.z + 0.5;
+    float depth = 0.2 * fs_Pos.z + 0.5;
         // Compute final shaded color
-    out_Col = vec4(vec3(depth), 1.0);
+    if (depth > 0.99999) {
+        out_Col = vec4(vec3(1.0, 0.0, 0.0), 1.0);
+    } else {
+        out_Col = vec4(vec3(depth), 1.0);
+    }
         // out_Col = vec4(1.0, 1.0, 0.0, 1.0);
 }
