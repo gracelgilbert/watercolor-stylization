@@ -32,7 +32,7 @@ void main() {
 
   // vec4 grayscale = texture(u_Image1, vec2( x,  y));
 
-  // out_Col = vec4(vec3(ControlSample.g), 1.0);
+  // out_Col = ColorSample;
   out_Col = darkenedEdgeCol;
 
 }

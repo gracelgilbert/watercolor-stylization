@@ -199,10 +199,13 @@ void main()
 
 
     bleedAmount = pow(fbm3D(-fs_Pos.x, -fs_Pos.y, fs_Pos.z, 1.0, 6.0, 6.0, 6.0), 15.0);
+        // bleedAmount = 0.0;
+
     offset += u_BleedScale * bleedAmount * fs_Nor;
     offset.w = 0.0;
 
     edgeDarkening = pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 2.0, 2.0, 2.0), 5.0);
+    // offset = vec4(0.0);
 
     vec4 modelposition = u_Model * vs_Pos + offset;   // Temporarily store the transformed vertex positions for use below
     // vec4 modelposition = u_Model * vs_Pos;   // Temporarily store the transformed vertex positions for use below
