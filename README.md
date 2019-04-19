@@ -6,9 +6,7 @@
 https://gracelgilbert.github.io/watercolor-stylization/
 
 ## Source:
-- [Real-time Procedural Generation of 'Pseudo Infinite' Cities](procedural_infinite_cities.pdf)
-
-[Art-directed watercolor stylization of 3D animations in real-time](Art-directed watercolor stylization of 3D animations in real-time.pdf)
+[Art-directed watercolor stylization of 3D animations in real-time](Art-directed_watercolor_stylization_of_3D_animations_in_real-time.pdf)
 
 ## Progress:
 ### Shader pipeline setup
@@ -69,6 +67,16 @@ This blurring pass is a much stronger blur, using a 21 by 21 guassian blur with 
 
 ### Compositing effects
 The final stage involves adding the edge darkening effect on top of the bleeded image. To do this, I start by subtracting the "ColorImage" color from the 5 by 5 gaussian blur image. I then take 1 + the maximum of the RGB channels of this subtracted image color. The final output color is the bleeded image color with each channel raised to this 1 + max(RGB) value. Taking the difference between the blurred and non blurred images isolates the edges. The closer to the edge the larger the maximum RGB value will be.  When the bleeded color is raised to this power, it will raise the edges to a higher power. Since the colors are in the 0 to 1 range, raising to the higher power darkens them more.  Therefore, this process darkens the edges, which is a realistic effect when painting with watercolors.  The strength of this edge darkening effect is scaled by a parameter that is stored in the control map and created with FBM, preventing entire edges from being darkened.  This makes it more natural looking.
+
+![](Images/Control.png)
+<p align="center">
+  Control texture, where Green determines edge darkening
+</p>
+
+![](Images/Cover.png)
+<p align="center">
+  Final image
+</p>
 
 ## Next Steps:
 ### Refine bleeding 
