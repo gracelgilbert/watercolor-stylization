@@ -6,7 +6,7 @@
 https://gracelgilbert.github.io/watercolor-stylization/
 
 ## Source:
-[Art-directed watercolor stylization of 3D animations in real-time](Art-directed_watercolor_stylization_of_3D_animations_in_real-time.pdf)
+[Art-directed watercolor stylization of 3D animations in real-time](Sources/Art-directed_watercolor_stylization_of_3D_animations_in_real-time.pdf)
 
 ## Progress:
 ### Shader pipeline setup
