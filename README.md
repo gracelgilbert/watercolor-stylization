@@ -79,7 +79,7 @@ Currently, the paper texture only shows through the color when it is diluted eno
 ### Setup environment
 Once I have the shader working, I would like to set up a scene of a waterfall, the Victoria Falls of Zimbabwe.  I plan to model simplified geometry in Maya and import that into my project. While the geometry will be fairly simple and made of relatively solid colors, this fits within the style of water color paintings. I would like to do a simple animation of the waterfalls, and perhaps some of the bushes in the foreground and background. For the waterfalls, it would not be a realistic simulation, but a noise function where the sampling is animating vertically overtime to give a falling effect. 
 
-![](Images/VictoriaFalls.png)
+![](Images/VictoriaFalls.jpeg)
 <p align="center">
   Victoria Falls reference image 
 </p>
