@@ -6,7 +6,9 @@
 https://gracelgilbert.github.io/watercolor-stylization/
 
 ## Source:
-[Art-directed watercolor stylization of 3D animations in real-time](Sources/Art-directed watercolor stylization of 3D animations in real-time.pdf)
+- [Real-time Procedural Generation of 'Pseudo Infinite' Cities](procedural_infinite_cities.pdf)
+
+[Art-directed watercolor stylization of 3D animations in real-time](Art-directed watercolor stylization of 3D animations in real-time.pdf)
 
 ## Progress:
 ### Shader pipeline setup
@@ -85,4 +87,4 @@ Once I have the shader working, I would like to set up a scene of a waterfall, t
 </p>
 
 ### Add volumetric effect
-If time permits, I would like to add a volumetric rendering effect to create water mist coming from the waterfall and try to integrate this with the watercolor stylization. To do this, I would look at this paper for reference, along with [this](https://www.shadertoy.com/view/4sjfzw) shadertoy example, https://www.shadertoy.com/view/4sjfzw
+If time permits, I would like to add a volumetric rendering effect to create water mist coming from the waterfall and try to integrate this with the watercolor stylization. To do this, I would look at [this](Sources/thesis.pdf) paper for reference, along with [this](https://www.shadertoy.com/view/4sjfzw) shadertoy example.
