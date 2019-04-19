@@ -28,12 +28,15 @@ The first blurring pass is a 5 by 5 gaussian blur with a sigma value of 1.  This
 #### Bleeding blur pass
 This blurring pass is a much stronger blur, using a 21 by 21 guassian blur with a sigma value of 20. This blur is only applied to the areas of geometry with a high bleeding parameter, specifically the areas that had been extruded out in the vertex deformation stage. This gives the effect that those areas of geometry had high levels of pigment bleeding. To only bleed in certain areas, I have an average bleed amount variable. When I iterate through the pixels that are taken into account in the gaussian blur, I sample the control map at those pixels and average out their bleeding values.  I then scale the blurred color by this average bleeding amount and scale the non blurred color by 1 - the average bleeding amount and add the two colors together. 
 
-Right now, the bleeding algorithm does not take into account the depth of the objects.  However, the algorithm presented in the paper does use the depth map to determine which areas get blurred.  In particular, it will detect if an object is in the foregrond and blur into the background but not let the background blur into the foreground object. I plan to implement this depth aware bleeding algorithm. 
 ### Compositing effects
+The final stage involves adding the edge darkening effect on top of the bleeded image. To do this, I start by subtracting the "ColorImage" color from the 5 by 5 gaussian blur image. I then take 1 + the maximum of the RGB channels of this subtracted image color. The final output color is the bleeded image color with each channel raised to this 1 + max(RGB) value. Taking the difference between the blurred and non blurred images isolates the edges. The closer to the edge the larger the maximum RGB value will be.  When the bleeded color is raised to this power, it will raise the edges to a higher power. Since the colors are in the 0 to 1 range, raising to the higher power darkens them more.  Therefore, this process darkens the edges, which is a realistic effect when painting with watercolors.  The strength of this edge darkening effect is scaled by a parameter that is stored in the control map and created with FBM, preventing entire edges from being darkened.  This makes it more natural looking.
 
 ## Next Steps:
 ### Refine bleeding 
+Right now, the bleeding algorithm does not take into account the depth of the objects.  However, the algorithm presented in the paper does use the depth map to determine which areas get blurred.  In particular, it will detect if an object is in the foregrond and blur into the background but not let the background blur into the foreground object. I plan to implement this depth aware bleeding algorithm. 
+
 ### Refine edge darkening
+Currently, the edge darkening effect has not been working exactly as intended.  When in full effect on all edges, it creates a thin darker line near the edge but not right on the edge. To fix this, I will first try increasing the blur that I am using for edge detection so it finds a larger area as the edge to darken rather than a thin line.
 ### Refine paper interaction
 ### Setup environment
 ### Add volumetric effect
