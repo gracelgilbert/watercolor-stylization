@@ -38,5 +38,10 @@ Right now, the bleeding algorithm does not take into account the depth of the ob
 ### Refine edge darkening
 Currently, the edge darkening effect has not been working exactly as intended.  When in full effect on all edges, it creates a thin darker line near the edge but not right on the edge. To fix this, I will first try increasing the blur that I am using for edge detection so it finds a larger area as the edge to darken rather than a thin line.
 ### Refine paper interaction
+Currently, the paper texture only shows through the color when it is diluted enough for the paper texture to come through.  However, in real water colors, the bump of the paper texture applies to the ares with pigment as well.  I plan to apply the normal mapping of the paper to the entire image.  The color of the paper will stay in just the diluted areas, but the bump will be applied throughout.
 ### Setup environment
+Once I have the shader working, I would like to set up a scene of a waterfall, the Victoria Falls of Zimbabwe.  I plan to model simplified geometry in Maya and import that into my project. While the geometry will be fairly simple and made of relatively solid colors, this fits within the style of water color paintings. I would like to do a simple animation of the waterfalls, and perhaps some of the bushes in the foreground and background. For the waterfalls, it would not be a realistic simulation, but a noise function where the sampling is animating vertically overtime to give a falling effect. 
+
+The image I am using as reference is the following:
 ### Add volumetric effect
+If time permits, I would like to add a volumetric rendering effect to create water mist coming from the waterfall and try to integrate this with the watercolor stylization. To do this, I would look at this paper for reference, along with [this](https://www.shadertoy.com/view/4sjfzw) shadertoy example, https://www.shadertoy.com/view/4sjfzw
