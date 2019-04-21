@@ -1,4 +1,4 @@
-# watercolor-stylization
+# Watercolor Stylization, Grace Gilbert (gracegi)
 
 ![](Images/Cover.png)
 
