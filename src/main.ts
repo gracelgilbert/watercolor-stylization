@@ -229,12 +229,16 @@ function main() {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, PaperImage);
     color.setImage1();
+    color.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+    color.setViewProjMatrix(camera.projectionMatrix);
+    // color.set
 
     // Render 3D Scene with Color:
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
     color.setBleed(0.02);
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), color, [walls]);
     color.setBleed(0.5);
+    color.setID(1.0);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), color, [sphere]);
 
 
@@ -250,6 +254,9 @@ function main() {
     // Setup texture, fb, rb
     textureSetup();
     fbrbSetup(zBufferImage, fbDepth, rbDepth);
+
+    depth.setViewProjMatrix(camera.projectionMatrix);
+    depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
     // Render 3D scene with Depth:
     depth.setBleed(0.02);
@@ -271,8 +278,14 @@ function main() {
 
     // Render 3D scene with Control:
     control.setBleed(0.02);
+    control.setID(0.5);
+    control.setViewProjMatrix(camera.projectionMatrix);
+    control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+
+
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [walls]);
     control.setBleed(0.5);
+    control.setID(1.0);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [sphere]);
 
 

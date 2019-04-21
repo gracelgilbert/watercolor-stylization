@@ -12,6 +12,7 @@
 precision highp float;
 
 uniform vec4 u_Color; // The color with which to render this instance of geometry.
+uniform float u_GeomID;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
@@ -21,6 +22,7 @@ in vec4 fs_Col;
 in vec4 fs_Pos;
 in float bleedAmount;
 in float edgeDarkening;
+in float edgeValue;
 
 out vec4 out_Col; // This is the final output color that you will see on your
                   // screen for the pixel that is currently being processed.
@@ -32,6 +34,6 @@ void main()
     // Material base color (before shading)
 
         // Compute final shaded color
-        out_Col = vec4(bleedAmount, edgeDarkening, 0.0, 1.0);
+        out_Col = vec4(bleedAmount, edgeDarkening, edgeValue, u_GeomID);
         // out_Col = vec4(1.0, 1.0, 0.0, 1.0);
 }

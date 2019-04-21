@@ -36,6 +36,8 @@ out vec2 screenspace;
 
 out float bleedAmount;
 out float edgeDarkening;
+out float edgeValue;
+
 
 out vec4 viewspace;
 
@@ -195,16 +197,20 @@ void main()
                                                             // the model matrix.
 
     float a = 1.0;
-    vec4 offset = 0.02 * (sin(vs_Pos * 20.0) + sin((vs_Pos * 20.0) + 30.0)) * pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
+    edgeValue = pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
+    vec4 offset = 0.02 * (sin(vs_Pos * 20.0) + sin((vs_Pos * 20.0) + 30.0)) * edgeValue;
 
 
-    bleedAmount = pow(fbm3D(-fs_Pos.x, -fs_Pos.y, fs_Pos.z, 1.0, 6.0, 6.0, 6.0), 15.0);
+    bleedAmount = pow(fbm3D(-fs_Pos.x, -fs_Pos.y, fs_Pos.z, 1.0, 6.0, 6.0, 6.0), 13.0);
         // bleedAmount = 0.0;
 
     offset += u_BleedScale * bleedAmount * fs_Nor;
     offset.w = 0.0;
 
-    edgeDarkening = pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 2.0, 2.0, 2.0), 5.0);
+    edgeDarkening = clamp(pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 1.0, 1.0, 1.0), 5.0), 0.0, 1.0);
+    // edgeDarkening = 1.0;
+    edgeDarkening *= 1.0 - bleedAmount;
+    
     // offset = vec4(0.0);
 
     vec4 modelposition = u_Model * vs_Pos + offset;   // Temporarily store the transformed vertex positions for use below
@@ -213,6 +219,7 @@ void main()
 
     fs_LightVec = normalize(lightPos - modelposition);  // Compute the direction in which the light source lies
     viewspace = u_ViewProj * modelposition;
+    // fs_Pos = modelposition;
 
     
 

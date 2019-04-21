@@ -26,9 +26,11 @@ out vec4 out_Col; // This is the final output color that you will see on your
 
 void main()
 {
-    float depth = 0.2 * fs_Pos.z + 0.5;
+    // float depth = 0.05 * fs_Pos.z + 0.5;
+    float depth = 1.0 - (0.03 * length(u_CameraPos - fs_Pos));
+
         // Compute final shaded color
-    if (depth > 0.99999) {
+    if (depth > 0.99999 || depth < 0.0000) {
         out_Col = vec4(vec3(1.0, 0.0, 0.0), 1.0);
     } else {
         out_Col = vec4(vec3(depth), 1.0);

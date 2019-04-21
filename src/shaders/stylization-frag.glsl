@@ -24,7 +24,9 @@ void main() {
   vec4 ControlSample = texture(u_Image3, vec2( x,  y));
 
   vec4 edgeDarkeningDiff = BlurSample - ColorSample;
-  float maxRGB = 1.0 + ControlSample.g * max(max(edgeDarkeningDiff.x, edgeDarkeningDiff.y), edgeDarkeningDiff.z);
+  float maxRGB = 1.0 + 1.0 * ControlSample.b * ControlSample.g * max(max(edgeDarkeningDiff.x, edgeDarkeningDiff.y), edgeDarkeningDiff.z);
+  // float maxRGB = 1.0 + 5.0 * max(max(edgeDarkeningDiff.x, edgeDarkeningDiff.y), edgeDarkeningDiff.z);
+
   vec4 darkenedEdgeCol = vec4(pow(BleedSample.x, maxRGB), pow(BleedSample.y, maxRGB), pow(BleedSample.z, maxRGB), 1.0);
 
 
@@ -32,7 +34,8 @@ void main() {
 
   // vec4 grayscale = texture(u_Image1, vec2( x,  y));
 
-  // out_Col = ColorSample;
-  out_Col = darkenedEdgeCol;
+  // out_Col = vec4(maxRGB - 1.0, 0.0, 0.0, 1.0);
+  out_Col = BleedSample;
+  // out_Col = darkenedEdgeCol;
 
 }
