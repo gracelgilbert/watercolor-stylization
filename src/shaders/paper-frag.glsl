@@ -155,7 +155,7 @@ void main() {
     float y = 0.5 * (fs_Pos.y + 1.0);
     vec2 position = vec2(x,y);
 
-    vec4 albedo = 2.5 * vec4(1.0, 0.99, 0.95, 1.0);
+    vec4 albedo = vec4(1.0, 0.99, 0.95, 1.0);
     float height = getHeight(position);
 
     vec2 posxP = position + vec2(epsilon, 0.0);
@@ -193,7 +193,8 @@ void main() {
                                                         //to simulate ambient lighting. This ensures that faces that are not
                                                         //lit by our point light are not completely black.
 
-    out_Col = vec4(diffuseTerm * albedo.rgb, 1.0);
+    // out_Col = vec4(diffuseTerm * 2.5 * albedo.rgb, 1.0);
+    out_Col = vec4(albedo.rgb, 1.0);
 
 
     // accumColor = texture(u_Image1, vec2( x,  y));

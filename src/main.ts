@@ -236,9 +236,10 @@ function main() {
     // Render 3D Scene with Color:
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
     color.setBleed(0.02);
+    color.setID(0.0);
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), color, [walls]);
     color.setBleed(0.5);
-    color.setID(1.0);
+    color.setID(0.5);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), color, [sphere]);
 
 
@@ -278,14 +279,14 @@ function main() {
 
     // Render 3D scene with Control:
     control.setBleed(0.02);
-    control.setID(0.5);
+    control.setID(0.0);
     control.setViewProjMatrix(camera.projectionMatrix);
     control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
 
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [walls]);
     control.setBleed(0.5);
-    control.setID(1.0);
+    control.setID(0.5);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [sphere]);
 
 

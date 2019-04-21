@@ -60,11 +60,20 @@ void main() {
         vec4 currControl = texture(u_Image3, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
         float scale = array[count];        
 
-        // if (currDepth.r > depthSample.r && currControl.r < 0.1 && currControl.a != controlSample.a) {
-        //   colorLost += scale;
-        //   scale = 0.0;
-        // } 
-        totalBlur += currControl.r;
+        if (currDepth.r > depthSample.r && currControl.r < 0.1 && currControl.a != controlSample.a) {
+          // If current pixel is farther than kernel, current object is not blurred, and current object is different from current kernel object
+          colorLost += scale;
+          scale = 0.0;
+        } 
+        if (currDepth.r < depthSample.r && controlSample.r < 0.1 && currControl.a != controlSample.a) {
+          // If current object is closer than blurred, current object is not blurred, and current object is different from current kernel object
+          colorLost += scale;
+          scale = 0.0;
+        } 
+        // totalBlur += currControl.r;
+        if (currControl.r > totalBlur) {
+          totalBlur = currControl.r;
+        }
 
         accumColor = accumColor + (scale * curr_color);
         count++;
@@ -82,7 +91,7 @@ void main() {
   //   blurrAmount = 0.0;
   // }
 
-  vec4 finalColor = mix(colorSample, accumColor, avgBlur);
+  vec4 finalColor = mix(colorSample, accumColor, totalBlur);
   
   // float T = 0.5;
   // for (int i = -10; i <= 10; i++) {
@@ -106,5 +115,6 @@ void main() {
 
   // accumColor = texture(u_Image1, vec2( x,  y));
   out_Col = vec4(finalColor.rgb, 1.0);
+  // out_Col = vec4(controlSample.aaa, 1.0);
 
 }
