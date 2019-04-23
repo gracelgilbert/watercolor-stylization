@@ -41,7 +41,7 @@ out float edgeValue;
 
 out vec4 viewspace;
 
-const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
+const vec4 lightPos = vec4(10, 15, 1, 1); //The position of our virtual light, which is used to compute the shading of
                                         //the geometry in the fragment shader.
 
 float random1( vec2 p , vec2 seed) {
@@ -198,7 +198,7 @@ void main()
 
     float a = 1.0;
     edgeValue = pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
-    vec4 offset = 0.02 * (sin(vs_Pos * 20.0) + sin((vs_Pos * 20.0) + 30.0)) * edgeValue;
+    vec4 offset = 0.03 * (sin(vs_Pos * 15.0) + sin((vs_Pos * 15.0) + 30.0)) * edgeValue;
 
 
     bleedAmount = pow(fbm3D(-fs_Pos.x, -fs_Pos.y, fs_Pos.z, 1.0, 6.0, 6.0, 6.0), 13.0);

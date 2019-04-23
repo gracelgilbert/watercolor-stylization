@@ -16,9 +16,11 @@ import Mesh from './geometry/Mesh';
 const controls = {
 };
 
-let cube: Cube;
-let sphere: Mesh;
-let walls: Mesh;
+// let sphere: Mesh;
+let water: Mesh;
+let rock: Mesh;
+let darkBush: Mesh;
+let lightBush:Mesh;
 
 let ColorImage: WebGLTexture;
 let zBufferImage: WebGLTexture;
@@ -47,15 +49,20 @@ let screenQuad: ScreenQuad;
 let time: number = 0.0;
 
 function loadScene() {
-  cube = new Cube(vec3.fromValues(0, 0, 0), 1);
-  cube.create();
-  let obj0: string = readTextFile('./sphere.obj');
-  sphere = new Mesh(obj0, vec3.fromValues(0, 0, 0));
-  sphere.create();
+  let objRock: string = readTextFile('./Rock.obj');
+  rock = new Mesh(objRock, vec3.fromValues(0, 0, 0));
+  rock.create();
 
-  let obj1: string = readTextFile('./Walls.obj');
-  walls = new Mesh(obj1, vec3.fromValues(0, 0, 0));
-  walls.create();
+  let objWater: string = readTextFile('./Water.obj');
+  water = new Mesh(objWater, vec3.fromValues(0, 0, 0));
+  water.create();
+
+  let objDarkBush: string = readTextFile('./DarkBush.obj');
+  darkBush = new Mesh(objDarkBush, vec3.fromValues(0, 0, 0));
+  darkBush.create();
+  let objLightBush: string = readTextFile('./LightBush.obj');
+  lightBush = new Mesh(objLightBush, vec3.fromValues(0, 0, 0));
+  lightBush.create();
 }
 
 function main() {
@@ -235,13 +242,18 @@ function main() {
 
     // Render 3D Scene with Color:
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
-    color.setBleed(0.02);
+    color.setBleed(0.7);
     color.setID(0.0);
-    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), color, [walls]);
+    renderer.render(camera, vec4.fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
     color.setBleed(0.5);
     color.setID(0.5);
-    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), color, [sphere]);
-
+    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 3.0 * 0.064,3.0 * 0.046, 1.0), color, [rock]);
+    color.setBleed(0.02);
+    color.setID(0.7);
+    renderer.render(camera, vec4.fromValues(1.0 * 0.087, 3.0 * 0.064,1.0 * 0.046, 1.0), color, [darkBush]);
+    color.setBleed(0.02);
+    color.setID(0.9);
+    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), color, [lightBush]);
 
 
     /*
@@ -260,10 +272,16 @@ function main() {
     depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
     // Render 3D scene with Depth:
-    depth.setBleed(0.02);
-    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [walls]);
+    depth.setBleed(0.7);
+    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [water]);
     depth.setBleed(0.5);
-    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [sphere]);
+    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [rock]);
+    color.setBleed(0.02);
+    color.setID(0.7);
+    renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [darkBush]);
+    color.setBleed(0.02);
+    color.setID(0.9);
+    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [lightBush]);
     /*
     THIRD PASS: CONTROLS
     */
@@ -278,16 +296,22 @@ function main() {
     fbrbSetup(ControlImage, fbControl, rbControl);
 
     // Render 3D scene with Control:
-    control.setBleed(0.02);
+    control.setBleed(0.7);
     control.setID(0.0);
     control.setViewProjMatrix(camera.projectionMatrix);
     control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
 
-    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [walls]);
+    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [water]);
     control.setBleed(0.5);
     control.setID(0.5);
-    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [sphere]);
+    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [rock]);
+    color.setBleed(0.02);
+    color.setID(0.7);
+    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [darkBush]);
+    color.setBleed(0.02);
+    color.setID(0.9);
+    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [lightBush]);
 
 
     /*
