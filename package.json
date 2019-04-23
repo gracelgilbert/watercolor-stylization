@@ -1,17 +1,21 @@
 {
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gracelgilbert/watercolor-stylization"
+  },
+  "license": "UNLICENSED",
   "scripts": {
     "start": "webpack-dev-server --hot --inline",
     "build": "webpack"
   },
   "devDependencies": {
-    "@types/node": "^9.3.0",
-    "@types/webgl2": "0.0.2",
     "@types/dat-gui": "^0.6.3",
     "@types/gl-matrix": "^2.4.0",
+    "@types/node": "^9.3.0",
+    "@types/webgl2": "0.0.2",
     "ts-loader": "^3.2.0",
     "typescript": "^2.6.2",
     "webpack": "^3.10.0",
-    "webpack-dev-server": "^2.10.1",
     "webpack-glsl-loader": "^1.0.1"
   },
   "dependencies": {
@@ -19,6 +23,7 @@
     "dat-gui": "^0.5.0",
     "gl-matrix": "^2.4.0",
     "stats-js": "^1.0.0-alpha1",
-    "webgl-obj-loader": "^1.0.0"
+    "webgl-obj-loader": "^1.0.0",
+    "webpack-dev-server": "^2.9.1"
   }
 }

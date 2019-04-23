@@ -91,15 +91,15 @@ float interpNoise3d(float x, float y, float z) {
   float v7 = random1(vec3(intX + 1.0, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));
   float v8 = random1(vec3(intX + 1.0, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));
 
-  float i1 = mix(v2, v3, fractX);
-  float i2 = mix(v1, v4, fractX);
-  float i3 = mix(v6, v7, fractX);
-  float i4 = mix(v5, v8, fractX);
+  float i1 = smoothstep(0.0, 1.0, mix(v2, v3, fractX));
+  float i2 = smoothstep(0.0, 1.0, mix(v1, v4, fractX));
+  float i3 = smoothstep(0.0, 1.0, mix(v6, v7, fractX));
+  float i4 = smoothstep(0.0, 1.0, mix(v5, v8, fractX));
 
-  float j1 = mix(i4, i3, fractZ);
-  float j2 = mix(i2, i1, fractZ);
+  float j1 = smoothstep(0.0, 1.0, mix(i4, i3, fractZ));
+  float j2 = smoothstep(0.0, 1.0, mix(i2, i1, fractZ));
 
-  return mix(j2, j1, fractY);
+  return smoothstep(0.0, 1.0, mix(j2, j1, fractY));
 
 }
 
@@ -198,13 +198,13 @@ void main()
 
     float a = 1.0;
     edgeValue = pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
-    vec4 offset = 0.03 * (sin(vs_Pos * 15.0) + sin((vs_Pos * 15.0) + 30.0)) * edgeValue;
+    vec4 offset = 0.03 * (sin(vs_Pos * 10.0) + sin((vs_Pos * 10.0) + 30.0)) * edgeValue;
+    // offset = vec4(0.0);
 
-
-    bleedAmount = pow(fbm3D(-fs_Pos.x, -fs_Pos.y, fs_Pos.z, 1.0, 6.0, 6.0, 6.0), 13.0);
+    bleedAmount = clamp(pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.8, 2.0, 2.0, 2.0), 13.0), 0.0, 1.0);
         // bleedAmount = 0.0;
 
-    offset += u_BleedScale * bleedAmount * fs_Nor;
+    // offset += u_BleedScale * bleedAmount * fs_Nor;
     offset.w = 0.0;
 
     edgeDarkening = clamp(pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 1.0, 1.0, 1.0), 5.0), 0.0, 1.0);

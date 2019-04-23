@@ -96,7 +96,7 @@ out vec4 out_Col;
 float getHeight(vec2 pos) {
     float height = 1.0 * pow(1.0 - computeWorley(pos.x, pos.y, 1800.0, 1000.0), 0.3);
     height += 0.6 * (1.0 - pow(fbm(pos.x, pos.y, 1.0, 0.01, 0.01), 0.5));
-    return height;
+    return clamp(height, 0.0, 1.0);
 }
 const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
 
@@ -112,7 +112,7 @@ void main() {
   vec4 ControlSample = texture(u_Image3, vec2( x,  y));
 
   vec4 edgeDarkeningDiff = BlurSample - ColorSample;
-  float maxRGB = 1.0 + 1.0 * ControlSample.b * ControlSample.g * max(max(edgeDarkeningDiff.x, edgeDarkeningDiff.y), edgeDarkeningDiff.z);
+  float maxRGB = 1.0 + 8.0 * ControlSample.b * ControlSample.g * max(max(edgeDarkeningDiff.x, edgeDarkeningDiff.y), edgeDarkeningDiff.z);
   // float maxRGB = 1.0 + 5.0 * max(max(edgeDarkeningDiff.x, edgeDarkeningDiff.y), edgeDarkeningDiff.z);
 
   vec4 darkenedEdgeCol = vec4(pow(BleedSample.x, maxRGB), pow(BleedSample.y, maxRGB), pow(BleedSample.z, maxRGB), 1.0);
@@ -148,7 +148,7 @@ void main() {
     vec4 fs_LightVec = normalize(lightPos);  // Compute the direction in which the light source lies
 
 
-    float diffuseTerm = dot(normalize(normal), normalize(fs_LightVec));
+    float diffuseTerm = pow(dot(normalize(normal), normalize(fs_LightVec)), 1.5);
         // Avoid negative lighting values
         // diffuseTerm = clamp(diffuseTerm, 0, 1);
 
@@ -158,13 +158,13 @@ void main() {
                                                         //to simulate ambient lighting. This ensures that faces that are not
                                                         //lit by our point light are not completely black.
 
-    out_Col = vec4(diffuseTerm * 2.5 * darkenedEdgeCol.rgb, 1.0);
+    out_Col = vec4(diffuseTerm * 4.0 * darkenedEdgeCol.rgb, 1.0);
 
 
   // vec4 grayscale = texture(u_Image1, vec2( x,  y));
 
   // out_Col = vec4(maxRGB - 1.0, 0.0, 0.0, 1.0);
-  // out_Col = BleedSample;
+  // out_Col = vec4(ControlSample.rgb, 1.0);
   // out_Col = darkenedEdgeCol;
 
 }

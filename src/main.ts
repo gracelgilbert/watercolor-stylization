@@ -76,12 +76,18 @@ function main() {
 
 
 
+
+
   // Add controls to the gui
   const gui = new DAT.GUI();
 
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
+  // canvas.addEventListener("webglcontextlost", function(event) {
+  //     event.preventDefault();
+  // }, false);
+
   const gl = <WebGL2RenderingContext> canvas.getContext('webgl2');
   if (!gl) {
     alert('WebGL 2 not supported!');
@@ -140,6 +146,9 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/stylization-frag.glsl')),
   ]);
   loadScene();
+  createTextures();
+  createFrameBuffers();
+  createRenderbuffers();
 
 
   function createTextures() {
@@ -204,9 +213,7 @@ function main() {
     stats.begin();
 
     // Instantiate textures, fbs, rbs
-    createTextures();
-    createFrameBuffers();
-    createRenderbuffers();
+
     
     /*
     PAPER TEXTURE
@@ -242,10 +249,10 @@ function main() {
 
     // Render 3D Scene with Color:
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
-    color.setBleed(0.7);
+    color.setBleed(0.2);
     color.setID(0.0);
     renderer.render(camera, vec4.fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
-    color.setBleed(0.5);
+    color.setBleed(0.2);
     color.setID(0.5);
     renderer.render(camera, vec4.fromValues(3.0 * 0.087, 3.0 * 0.064,3.0 * 0.046, 1.0), color, [rock]);
     color.setBleed(0.02);
@@ -272,9 +279,9 @@ function main() {
     depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
     // Render 3D scene with Depth:
-    depth.setBleed(0.7);
+    depth.setBleed(0.2);
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [water]);
-    depth.setBleed(0.5);
+    depth.setBleed(0.2);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [rock]);
     color.setBleed(0.02);
     color.setID(0.7);
@@ -296,14 +303,14 @@ function main() {
     fbrbSetup(ControlImage, fbControl, rbControl);
 
     // Render 3D scene with Control:
-    control.setBleed(0.7);
+    control.setBleed(0.2);
     control.setID(0.0);
     control.setViewProjMatrix(camera.projectionMatrix);
     control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
 
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [water]);
-    control.setBleed(0.5);
+    control.setBleed(0.2);
     control.setID(0.5);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [rock]);
     color.setBleed(0.02);
