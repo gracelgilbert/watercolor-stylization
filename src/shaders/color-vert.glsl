@@ -21,6 +21,8 @@ uniform mat4 u_ViewProj;    // The matrix that defines the camera's transformati
                             // but in HW3 you'll have to generate one yourself
 uniform vec4 u_CameraPos;
 uniform float u_BleedScale;
+uniform float u_IsWater;
+uniform float u_Time;
 
 in vec4 vs_Pos;             // The array of vertex positions passed to the shader
 
@@ -204,8 +206,13 @@ void main()
     bleedAmount = clamp(pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.8, 2.0, 2.0, 2.0), 13.0), 0.0, 1.0);
         // bleedAmount = 0.0;
 
-    // offset += u_BleedScale * bleedAmount * fs_Nor;
+    offset += u_BleedScale * bleedAmount * fs_Nor;
+    if (u_IsWater > 0.5) {
+      offset += fs_Nor * fbm3D(fs_Pos.x, fs_Pos.y + u_Time/3.0, fs_Pos.z, 0.1, 0.2, 1.5, 0.2) * (abs(fs_Nor.z) + abs(fs_Nor.x));
+    }
+
     offset.w = 0.0;
+
 
     edgeDarkening = clamp(pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 1.0, 1.0, 1.0), 5.0), 0.0, 1.0);
     // edgeDarkening = 1.0;

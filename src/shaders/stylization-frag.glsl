@@ -3,10 +3,10 @@ precision highp float;
 
 uniform vec3 u_Eye, u_Ref, u_Up;
 uniform vec2 u_Dimensions;
-uniform sampler2D u_Image0; // Color image
-uniform sampler2D u_Image1; // Blurred image
-uniform sampler2D u_Image2; // Bleeded image
-uniform sampler2D u_Image3; // Control image
+uniform sampler2D u_Image1; // Color image
+uniform sampler2D u_Image2; // Blurred image
+uniform sampler2D u_Image3; // Bleeded image
+uniform sampler2D u_Image4; // Control image
 
 float random1( vec2 p , vec2 seed) {
   return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);
@@ -34,7 +34,6 @@ float interpNoise2d(float x, float y) {
   float i1 = mix(v1, v2, fractX);
   float i2 = mix(v3, v4, fractX);
   return mix(i1, i2, fractY);
-  return 2.0;
 
 }
 
@@ -106,10 +105,10 @@ void main() {
   float x = 0.5 * (fs_Pos.x + 1.0);
   float y = 0.5 * (fs_Pos.y + 1.0);
 
-  vec4 ColorSample = texture(u_Image0, vec2( x,  y));
-  vec4 BlurSample = texture(u_Image1, vec2( x,  y));
-  vec4 BleedSample = texture(u_Image2, vec2( x,  y));
-  vec4 ControlSample = texture(u_Image3, vec2( x,  y));
+  vec4 ColorSample = texture(u_Image1, vec2( x,  y));
+  vec4 BlurSample = texture(u_Image2, vec2( x,  y));
+  vec4 BleedSample = texture(u_Image3, vec2( x,  y));
+  vec4 ControlSample = texture(u_Image4, vec2( x,  y));
 
   vec4 edgeDarkeningDiff = BlurSample - ColorSample;
   float maxRGB = 1.0 + 8.0 * ControlSample.b * ControlSample.g * max(max(edgeDarkeningDiff.x, edgeDarkeningDiff.y), edgeDarkeningDiff.z);
@@ -164,7 +163,7 @@ void main() {
   // vec4 grayscale = texture(u_Image1, vec2( x,  y));
 
   // out_Col = vec4(maxRGB - 1.0, 0.0, 0.0, 1.0);
-  // out_Col = vec4(ControlSample.rgb, 1.0);
-  // out_Col = darkenedEdgeCol;
+  // out_Col = vec4(ControlSample.rgb, 1.0); 
+  // out_Col = ColorSample;
 
 }

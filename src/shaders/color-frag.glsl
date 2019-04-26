@@ -185,7 +185,8 @@ void main()
         vec4 Cd = d * DA * (paperColor - Cc) + Cc;
 
 
-        float turbulenceCtrl = clamp(fbm3D(fs_Pos.x, fs_Pos.y, fs_Pos.z, 0.57, 3.0, 3.0, 3.0) + 0.2 * bleedAmount, 0.0, 1.0);
+        float turbulenceCtrl = clamp(fbm3D(fs_Pos.x, fs_Pos.y, fs_Pos.z, 0.4, 3.0, 3.0, 3.0) + 0.2 * bleedAmount, 0.0, 1.0);
+        turbulenceCtrl = clamp(0.6 * turbulenceCtrl + 0.4 * clamp(fbm3D(fs_Pos.x, fs_Pos.y, fs_Pos.z, 0.57, 2.0, 2.0, 2.0) + 0.2 * bleedAmount, 0.0, 1.0), 0.0, 1.0);
         // turbulenceCtrl = 0.0;
 
         vec4 Ct = vec4(pow(Cd.r, 3.0 - (4.0 * turbulenceCtrl)), pow(Cd.g, 3.0 - (4.0 * turbulenceCtrl)), pow(Cd.b, 3.0 - (4.0 * turbulenceCtrl)), 1.0);

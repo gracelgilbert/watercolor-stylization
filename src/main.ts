@@ -28,6 +28,7 @@ let ControlImage: WebGLTexture;
 let BlurredImage: WebGLTexture;
 let BleededImage: WebGLTexture;
 let PaperImage: WebGLTexture;
+let StyleImage: WebGLTexture;
 
 let fbColor: WebGLFramebuffer;
 let fbDepth: WebGLFramebuffer;
@@ -35,6 +36,7 @@ let fbControl: WebGLFramebuffer;
 let fbBlur: WebGLFramebuffer;
 let fbBilateral: WebGLFramebuffer;
 let fbPaper: WebGLFramebuffer;
+let fbStyle: WebGLFramebuffer;
 
 let rbColor: WebGLRenderbuffer;
 let rbDepth: WebGLRenderbuffer;
@@ -42,6 +44,7 @@ let rbControl: WebGLRenderbuffer;
 let rbBlur: WebGLRenderbuffer;
 let rbBilateral: WebGLRenderbuffer;
 let rbPaper: WebGLRenderbuffer;
+let rbStyle: WebGLRenderbuffer;
 
 
 
@@ -145,10 +148,13 @@ function main() {
     new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/stylization-frag.glsl')),
   ]);
+
+  const spray = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/WaterSpray-frag.glsl')),
+  ]);
   loadScene();
-  createTextures();
-  createFrameBuffers();
-  createRenderbuffers();
+
 
 
   function createTextures() {
@@ -158,6 +164,7 @@ function main() {
     BlurredImage = gl.createTexture();
     BleededImage = gl.createTexture();
     PaperImage = gl.createTexture();
+    StyleImage = gl.createTexture();
 
   }
 
@@ -168,6 +175,7 @@ function main() {
     fbBlur = gl.createFramebuffer();
     fbBilateral = gl.createFramebuffer();
     fbPaper = gl.createFramebuffer();
+    fbStyle = gl.createFramebuffer();
 
   }
 
@@ -178,8 +186,12 @@ function main() {
     rbBlur = gl.createRenderbuffer();
     rbBilateral = gl.createRenderbuffer();
     rbPaper = gl.createRenderbuffer();
-
+    rbStyle = gl.createRenderbuffer();
   }
+
+  createTextures();
+  createFrameBuffers();
+  createRenderbuffers();
 
   function textureSetup() {
     const texWidth = window.innerWidth;
@@ -247,13 +259,23 @@ function main() {
     color.setViewProjMatrix(camera.projectionMatrix);
     // color.set
 
+    color.setTime(time);
+    depth.setTime(time);
+    control.setTime(time);
+    spray.setTime(time);
+    spray.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+
+    time++;
+
     // Render 3D Scene with Color:
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
     color.setBleed(0.2);
     color.setID(0.0);
+    color.setWater(1.0);
     renderer.render(camera, vec4.fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
     color.setBleed(0.2);
     color.setID(0.5);
+    color.setWater(0.0);
     renderer.render(camera, vec4.fromValues(3.0 * 0.087, 3.0 * 0.064,3.0 * 0.046, 1.0), color, [rock]);
     color.setBleed(0.02);
     color.setID(0.7);
@@ -280,14 +302,16 @@ function main() {
 
     // Render 3D scene with Depth:
     depth.setBleed(0.2);
+    depth.setWater(1.0);
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [water]);
     depth.setBleed(0.2);
+    depth.setWater(0.0);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [rock]);
-    color.setBleed(0.02);
-    color.setID(0.7);
+    depth.setBleed(0.02);
+    depth.setID(0.7);
     renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [darkBush]);
-    color.setBleed(0.02);
-    color.setID(0.9);
+    depth.setBleed(0.02);
+    depth.setID(0.9);
     renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [lightBush]);
     /*
     THIRD PASS: CONTROLS
@@ -308,16 +332,17 @@ function main() {
     control.setViewProjMatrix(camera.projectionMatrix);
     control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
-
+    control.setWater(1.0);
     renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [water]);
     control.setBleed(0.2);
     control.setID(0.5);
+    control.setWater(0.0);
     renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [rock]);
-    color.setBleed(0.02);
-    color.setID(0.7);
+    control.setBleed(0.02);
+    control.setID(0.7);
     renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [darkBush]);
-    color.setBleed(0.02);
-    color.setID(0.9);
+    control.setBleed(0.02);
+    control.setID(0.9);
     renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [lightBush]);
 
 
@@ -378,28 +403,46 @@ function main() {
 
 
     // bind to screen and bind texture
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, ColorImage);
-    stylization.setImage0();
+    gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbStyle);
+
+    textureSetup();
+    fbrbSetup(StyleImage, fbStyle, rbStyle);
+
 
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+    gl.bindTexture(gl.TEXTURE_2D, ColorImage);
     stylization.setImage1();
 
     gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, BleededImage);
+    gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
     stylization.setImage2();
 
     gl.activeTexture(gl.TEXTURE3);
-    gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+    gl.bindTexture(gl.TEXTURE_2D, BleededImage);
     stylization.setImage3();
+
+    gl.activeTexture(gl.TEXTURE4);
+    gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+    stylization.setImage4();
 
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // render stylization to screen
+    // render stylization to texture
     renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), stylization,[screenQuad]);
+
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+    stylization.setImage1();
+
+    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), spray,[screenQuad]);
+
     // renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), paper,[screenQuad]);
 
 

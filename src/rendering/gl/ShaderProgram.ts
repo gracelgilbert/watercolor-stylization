@@ -35,9 +35,11 @@ class ShaderProgram {
   unifImage1: WebGLUniformLocation;
   unifImage2: WebGLUniformLocation;
   unifImage3: WebGLUniformLocation;
+  unifImage4: WebGLUniformLocation;
   unifDimensions: WebGLUniformLocation;
   unifBleedScale: WebGLUniformLocation;
   unifGeomID: WebGLUniformLocation;
+  unifIsWater: WebGLUniformLocation;
 
 
   constructor(shaders: Array<Shader>) {
@@ -64,9 +66,12 @@ class ShaderProgram {
     this.unifImage1     = gl.getUniformLocation(this.prog, "u_Image1");
     this.unifImage2     = gl.getUniformLocation(this.prog, "u_Image2");
     this.unifImage3     = gl.getUniformLocation(this.prog, "u_Image3");
+    this.unifImage4    = gl.getUniformLocation(this.prog, "u_Image4");
+
     this.unifDimensions = gl.getUniformLocation(this.prog, "u_Dimensions");
     this.unifBleedScale = gl.getUniformLocation(this.prog, "u_BleedScale");
     this.unifGeomID     = gl.getUniformLocation(this.prog, "u_GeomID");
+    this.unifIsWater    = gl.getUniformLocation(this.prog, "u_IsWater");
   }
 
   use() {
@@ -81,7 +86,7 @@ class ShaderProgram {
 
     if(this.unifTime != -1)
     {
-      gl.uniform1i(this.unifTime, t);
+      gl.uniform1f(this.unifTime, t);
     }
   }
 
@@ -91,6 +96,15 @@ class ShaderProgram {
     if(this.unifBleedScale != -1)
     {
       gl.uniform1f(this.unifBleedScale, bleed);
+    }
+  }
+
+  setWater(water: number) {
+    this.use();
+
+    if(this.unifIsWater != -1)
+    {
+      gl.uniform1f(this.unifIsWater, water);
     }
   }
 
@@ -157,6 +171,13 @@ class ShaderProgram {
     this.use();
     if (this.unifImage3 !== -1) {
       gl.uniform1i(this.unifImage3, 3);
+    }
+  }
+
+  setImage4() {
+    this.use();
+    if (this.unifImage4 !== -1) {
+      gl.uniform1i(this.unifImage4, 4);
     }
   }
 
