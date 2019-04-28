@@ -22,6 +22,15 @@ let rock: Mesh;
 let darkBush: Mesh;
 let lightBush:Mesh;
 
+let windmill: Mesh;
+let roof: Mesh;
+let spin: Mesh;
+let fence: Mesh;
+let grass: Mesh;
+
+
+let sceneVersion = 1;
+
 let ColorImage: WebGLTexture;
 let zBufferImage: WebGLTexture;
 let ControlImage: WebGLTexture;
@@ -52,20 +61,46 @@ let screenQuad: ScreenQuad;
 let time: number = 0.0;
 
 function loadScene() {
-  let objRock: string = readTextFile('./Rock.obj');
-  rock = new Mesh(objRock, vec3.fromValues(0, 0, 0));
-  rock.create();
+  if (sceneVersion == 0) {
+    let objRock: string = readTextFile('./Rock.obj');
+    rock = new Mesh(objRock, vec3.fromValues(0, 0, 0));
+    rock.create();
+  
+    let objWater: string = readTextFile('./Water.obj');
+    water = new Mesh(objWater, vec3.fromValues(0, 0, 0));
+    water.create();
+  
+    let objDarkBush: string = readTextFile('./DarkBush.obj');
+    darkBush = new Mesh(objDarkBush, vec3.fromValues(0, 0, 0));
+    darkBush.create();
+  
+    let objLightBush: string = readTextFile('./LightBush.obj');
+    lightBush = new Mesh(objLightBush, vec3.fromValues(0, 0, 0));
+    lightBush.create();
+  } else {
+    let objMill: string = readTextFile('./windmillStructure.obj');
+    windmill = new Mesh(objMill, vec3.fromValues(0, 0, 0));
+    windmill.create();
+  
+    let objRoof: string = readTextFile('./windmillCap.obj');
+    roof = new Mesh(objRoof, vec3.fromValues(0, 0, 0));
+    roof.create();
+  
+    let objSpin: string = readTextFile('./windmillSpin.obj');
+    spin = new Mesh(objSpin, vec3.fromValues(0, 0, 0));
+    spin.create();
+    
+    let objFence: string = readTextFile('./fence.obj');
+    fence = new Mesh(objFence, vec3.fromValues(0, 0, 0));
+    fence.create();
+  
+    let objGrass: string = readTextFile('./grass.obj');
+    grass = new Mesh(objGrass, vec3.fromValues(0, 0, 0));
+    grass.create();
+  }
 
-  let objWater: string = readTextFile('./Water.obj');
-  water = new Mesh(objWater, vec3.fromValues(0, 0, 0));
-  water.create();
 
-  let objDarkBush: string = readTextFile('./DarkBush.obj');
-  darkBush = new Mesh(objDarkBush, vec3.fromValues(0, 0, 0));
-  darkBush.create();
-  let objLightBush: string = readTextFile('./LightBush.obj');
-  lightBush = new Mesh(objLightBush, vec3.fromValues(0, 0, 0));
-  lightBush.create();
+
 }
 
 function main() {
@@ -152,6 +187,11 @@ function main() {
   const spray = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/WaterSpray-frag.glsl')),
+  ]);
+
+  const clouds = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/noop-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/Clouds-frag.glsl')),
   ]);
   loadScene();
 
@@ -256,96 +296,193 @@ function main() {
     gl.bindTexture(gl.TEXTURE_2D, PaperImage);
     color.setImage1();
     color.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
-    color.setViewProjMatrix(camera.projectionMatrix);
+    // color.setViewProjMatrix(camera.projectionMatrix);
+
     // color.set
 
     color.setTime(time);
     depth.setTime(time);
     control.setTime(time);
     spray.setTime(time);
-    spray.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+    clouds.setTime(time);
 
+    spray.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+    // spray.setViewProjMatrix(camera.projectionMatrix);
     time++;
 
     // Render 3D Scene with Color:
-    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), paper, [screenQuad]);
-    color.setBleed(0.2);
-    color.setID(0.0);
-    color.setWater(1.0);
-    renderer.render(camera, vec4.fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
-    color.setBleed(0.2);
-    color.setID(0.5);
-    color.setWater(0.0);
-    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 3.0 * 0.064,3.0 * 0.046, 1.0), color, [rock]);
-    color.setBleed(0.02);
-    color.setID(0.7);
-    renderer.render(camera, vec4.fromValues(1.0 * 0.087, 3.0 * 0.064,1.0 * 0.046, 1.0), color, [darkBush]);
-    color.setBleed(0.02);
-    color.setID(0.9);
-    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), color, [lightBush]);
+
+    if (sceneVersion == 0) {
+      renderer.render(camera, vec4.fromValues(1.0, 0.99, 0.95, 1.0), paper, [screenQuad]);
+      color.setBleed(0.2);
+      color.setID(0.0);
+      color.setWater(1.0);
+      renderer.render(camera, vec4.fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
+      color.setBleed(0.2);
+      color.setID(0.5);
+      color.setWater(0.0);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 3.0 * 0.064,3.0 * 0.046, 1.0), color, [rock]);
+      color.setBleed(0.02);
+      color.setID(0.7);
+      renderer.render(camera, vec4.fromValues(1.0 * 0.087, 3.0 * 0.064,1.0 * 0.046, 1.0), color, [darkBush]);
+      color.setBleed(0.02);
+      color.setID(0.9);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), color, [lightBush]);
+  
+  
+      /*
+      SECOND PASS: DEPTH MAP
+      */
+      // bind Depth pass texture, fb, rb
+      gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbDepth);
+  
+      // Setup texture, fb, rb
+      textureSetup();
+      fbrbSetup(zBufferImage, fbDepth, rbDepth);
+  
+      depth.setViewProjMatrix(camera.projectionMatrix);
+      depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+  
+      // Render 3D scene with Depth:
+      depth.setBleed(0.2);
+      depth.setWater(1.0);
+      renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [water]);
+      depth.setBleed(0.2);
+      depth.setWater(0.0);
+      renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [rock]);
+      depth.setBleed(0.02);
+      depth.setID(0.7);
+      renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [darkBush]);
+      depth.setBleed(0.02);
+      depth.setID(0.9);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [lightBush]);
+      /*
+      THIRD PASS: CONTROLS
+      */
+  
+      // bind Control pass texture, fb, rb
+      gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
+  
+      // Setup texture, fb, rb
+      textureSetup();
+      fbrbSetup(ControlImage, fbControl, rbControl);
+  
+      // Render 3D scene with Control:
+      control.setBleed(0.2);
+      control.setID(0.0);
+      control.setViewProjMatrix(camera.projectionMatrix);
+      control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+  
+      control.setWater(1.0);
+      renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [water]);
+      control.setBleed(0.2);
+      control.setID(0.5);
+      control.setWater(0.0);
+      renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [rock]);
+      control.setBleed(0.02);
+      control.setID(0.7);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [darkBush]);
+      control.setBleed(0.02);
+      control.setID(0.9);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [lightBush]);
+  
+  
+    } else {
+      renderer.render(camera, vec4.fromValues(220.0/255, 230.0/255, 255.0/255, 1.0), paper, [screenQuad]);
+      color.setBleed(0.25);
+      color.setID(0.0);
+      renderer.render(camera, vec4.fromValues(100/255, 80/255, 20/155, 1.0), color, [windmill]);
+      color.setBleed(0.2);
+      color.setID(0.5);
+      color.setWater(2.0);
+      renderer.render(camera, vec4.fromValues(250/255, 245./255,230/255, 1.0), color, [spin]);
+      color.setBleed(0.02);
+      color.setID(0.7);
+      color.setWater(0.0);
+
+      renderer.render(camera, vec4.fromValues(130/255, 20/255,30/255, 1.0), color, [roof]);
+      color.setBleed(0.1);
+      color.setID(0.9);
+      renderer.render(camera, vec4.fromValues(230/255, 225./255,200/255, 1.0), color, [fence]);
+      color.setBleed(0.1);
+      color.setID(0.95);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), color, [grass]);
 
 
-    /*
-    SECOND PASS: DEPTH MAP
-    */
-    // bind Depth pass texture, fb, rb
-    gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
-    gl.bindRenderbuffer(gl.RENDERBUFFER, rbDepth);
+      /*
+      SECOND PASS: DEPTH MAP
+      */
+      // bind Depth pass texture, fb, rb
+      gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbDepth);
 
-    // Setup texture, fb, rb
-    textureSetup();
-    fbrbSetup(zBufferImage, fbDepth, rbDepth);
+      // Setup texture, fb, rb
+      textureSetup();
+      fbrbSetup(zBufferImage, fbDepth, rbDepth);
 
-    depth.setViewProjMatrix(camera.projectionMatrix);
-    depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+      depth.setViewProjMatrix(camera.projectionMatrix);
+      depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
-    // Render 3D scene with Depth:
-    depth.setBleed(0.2);
-    depth.setWater(1.0);
-    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [water]);
-    depth.setBleed(0.2);
-    depth.setWater(0.0);
-    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [rock]);
-    depth.setBleed(0.02);
-    depth.setID(0.7);
-    renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [darkBush]);
-    depth.setBleed(0.02);
-    depth.setID(0.9);
-    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [lightBush]);
-    /*
-    THIRD PASS: CONTROLS
-    */
+      // Render 3D scene with Depth:
+      depth.setBleed(0.2);
+      renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [windmill]);
+      depth.setBleed(0.2);
+      depth.setWater(0.0);
+      depth.setWater(2.0);
+      renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [spin]);
+      depth.setBleed(0.02);
+      depth.setID(0.7);
+      depth.setWater(0.0);
+      renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [roof]);
+      depth.setBleed(0.02);
+      depth.setID(0.9);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [fence]);
+      depth.setBleed(0.02);
+      depth.setID(0.95);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [grass]);
+      /*
+      THIRD PASS: CONTROLS
+      */
 
-    // bind Control pass texture, fb, rb
-    gl.bindTexture(gl.TEXTURE_2D, ControlImage);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
-    gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
+      // bind Control pass texture, fb, rb
+      gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
 
-    // Setup texture, fb, rb
-    textureSetup();
-    fbrbSetup(ControlImage, fbControl, rbControl);
+      // Setup texture, fb, rb
+      textureSetup();
+      fbrbSetup(ControlImage, fbControl, rbControl);
 
-    // Render 3D scene with Control:
-    control.setBleed(0.2);
-    control.setID(0.0);
-    control.setViewProjMatrix(camera.projectionMatrix);
-    control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+      // Render 3D scene with Control:
+      control.setBleed(0.2);
+      control.setID(0.0);
+      control.setViewProjMatrix(camera.projectionMatrix);
+      control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
-    control.setWater(1.0);
-    renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [water]);
-    control.setBleed(0.2);
-    control.setID(0.5);
-    control.setWater(0.0);
-    renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [rock]);
-    control.setBleed(0.02);
-    control.setID(0.7);
-    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [darkBush]);
-    control.setBleed(0.02);
-    control.setID(0.9);
-    renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [lightBush]);
+      control.setWater(0.0);
+      renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [windmill]);
+      control.setBleed(0.2);
+      control.setID(0.5);
+      control.setWater(2.0);
+      renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [spin]);
+      control.setBleed(0.02);
+      control.setID(0.7);
+      control.setWater(0.0);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [roof]);
+      control.setBleed(0.02);
+      control.setID(0.9);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [fence]);
+      control.setBleed(0.02);
+      control.setID(0.95);
+      renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [grass]);
 
-
+    }
+    
     /*
     FOURTH PASS: GAUSSIAN BLUR
     */
@@ -402,46 +539,98 @@ function main() {
     renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), bilateral, [screenQuad]);
 
 
-    // bind to screen and bind texture
-    // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, StyleImage);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
-    gl.bindRenderbuffer(gl.RENDERBUFFER, rbStyle);
+    if (sceneVersion == 0) {
+      // bind to screen and bind texture
+      // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbStyle);
 
-    textureSetup();
-    fbrbSetup(StyleImage, fbStyle, rbStyle);
-
-
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, ColorImage);
-    stylization.setImage1();
-
-    gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
-    stylization.setImage2();
-
-    gl.activeTexture(gl.TEXTURE3);
-    gl.bindTexture(gl.TEXTURE_2D, BleededImage);
-    stylization.setImage3();
-
-    gl.activeTexture(gl.TEXTURE4);
-    gl.bindTexture(gl.TEXTURE_2D, ControlImage);
-    stylization.setImage4();
-
-    gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // render stylization to texture
-    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), stylization,[screenQuad]);
+      textureSetup();
+      fbrbSetup(StyleImage, fbStyle, rbStyle);
 
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, StyleImage);
-    stylization.setImage1();
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+      stylization.setImage1();
 
-    renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), spray,[screenQuad]);
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+      stylization.setImage2();
+
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, BleededImage);
+      stylization.setImage3();
+
+      gl.activeTexture(gl.TEXTURE4);
+      gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+      stylization.setImage4();
+
+      gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      // render stylization to texture
+      renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), stylization,[screenQuad]);
+
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+      spray.setImage1();
+
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+      spray.setImage2();
+
+      renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), spray,[screenQuad]);
+    } else {
+      // bind to screen and bind texture
+      // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rbStyle);
+
+      textureSetup();
+      fbrbSetup(StyleImage, fbStyle, rbStyle);
+
+
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+      stylization.setImage1();
+
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+      stylization.setImage2();
+
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, BleededImage);
+      stylization.setImage3();
+
+      gl.activeTexture(gl.TEXTURE4);
+      gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+      stylization.setImage4();
+
+      gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      // render stylization to texture
+      renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), stylization,[screenQuad]);
+
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+      spray.setImage1();
+
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+      spray.setImage2();
+
+      renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), clouds,[screenQuad]);
+    }
+
 
     // renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), paper,[screenQuad]);
 

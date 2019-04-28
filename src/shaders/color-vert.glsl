@@ -185,7 +185,20 @@ float fbm3DHighOct(float x, float y, float z, float height, float xScale, float 
     amp *= persistence;
   }
   return height * total;
-}     
+}   
+
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
 
 void main()
 {
@@ -201,14 +214,19 @@ void main()
     float a = 1.0;
     edgeValue = pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
     vec4 offset = 0.03 * (sin(vs_Pos * 10.0) + sin((vs_Pos * 10.0) + 30.0)) * edgeValue;
-    // offset = vec4(0.0);
+    offset = vec4(0.0);
 
     bleedAmount = clamp(pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.8, 2.0, 2.0, 2.0), 13.0), 0.0, 1.0);
         // bleedAmount = 0.0;
 
     offset += u_BleedScale * bleedAmount * fs_Nor;
-    if (u_IsWater > 0.5) {
+    if (u_IsWater > 0.5 && u_IsWater < 1.5) {
       offset += fs_Nor * fbm3D(fs_Pos.x, fs_Pos.y + u_Time/3.0, fs_Pos.z, 0.1, 0.2, 1.5, 0.2) * (abs(fs_Nor.z) + abs(fs_Nor.x));
+    } 
+    if (u_IsWater > 1.5) {
+      fs_Pos = fs_Pos - vec4(-3.0, 2.1, 2.0, 0.0);
+      fs_Pos = rotationMatrix(vec3(0.0, 0.0, 1.0), u_Time / 4.0) * fs_Pos;
+      fs_Pos = fs_Pos + vec4(-3.0, 2.1, 2.0, 0.0);
     }
 
     offset.w = 0.0;
@@ -220,7 +238,7 @@ void main()
     
     // offset = vec4(0.0);
 
-    vec4 modelposition = u_Model * vs_Pos + offset;   // Temporarily store the transformed vertex positions for use below
+    vec4 modelposition = u_Model * fs_Pos + offset;   // Temporarily store the transformed vertex positions for use below
     // vec4 modelposition = u_Model * vs_Pos;   // Temporarily store the transformed vertex positions for use below
     fs_Pos = modelposition;
 

@@ -9,7 +9,21 @@ uniform float u_Time;
 uniform vec2 u_Dimensions;
 out vec4 out_Col;
 uniform vec4 u_CameraPos;
-uniform sampler2D u_Image1; // Color image
+uniform sampler2D u_Image1; // Full image
+uniform sampler2D u_Image2; // Depth image
+
+uniform mat4 u_Model;       // The matrix that defines the transformation of the
+                            // object we're rendering. In this assignment,
+                            // this will be the result of traversing your scene graph.
+
+uniform mat4 u_ModelInvTr;  // The inverse transpose of the model matrix.
+                            // This allows us to transform the object's normals properly
+                            // if the object has been non-uniformly scaled.
+
+uniform mat4 u_ViewProj;    // The matrix that defines the camera's transformation.
+                            // We've written a static matrix for you to use for HW2,
+                            // but in HW3 you'll have to generate one yourself
+
 
 
 float random1( vec2 p , vec2 seed) {
@@ -128,7 +142,7 @@ float fbm(float x, float y, float height, float xScale, float yScale) {
 float fbm3D(float x, float y, float z, float height, float xScale, float yScale, float zScale) {
   float total = 0.f;
   float persistence = 0.5f;
-  int octaves = 4;
+  int octaves = 2;
   float freq = 2.0;
   float amp = 1.0;
   for (int i = 0; i < octaves; i++) {
@@ -205,13 +219,38 @@ vec4 RaymarchScene( in vec3 origin, in vec3 dir )
     vec3 accumColor = vec3(0.0);
     float transmittance = 1.0;
     
-    for(int i = 0; i < 50; i++)
+    for(int i = 50; i < 180; i++)
     {
         pos = origin + t * dir + vec3(0.0, 0.0, 0.0);
         
-        float density = fbm3D(pos.x, pos.y- u_Time/8.0, pos.z , 0.7, 0.3, 0.3, 0.3);
-        float distFromCenter = clamp(pow(abs(length(pos - vec3(0.0, 0.0, 9.0))) * 2.0, 4.0), 0.0, 1.0);
+        float density = fbm3D(pos.x + 0.4 * sin(u_Time / 2.0) + 0.5 * cos(u_Time/ 3.0 + 3.0), pos.y - u_Time/2.0, pos.z , 0.2, 0.5, 0.5, 0.5);
+
+        
+        vec4 modelposition = vec4(12.0, -20.0, -55.0, 1.0);   // Temporarily store the transformed vertex positions for use below
+        // vec4 viewspace = u_ViewProj * modelposition;
+
+        vec3 sprayPos = vec3(pos.x * 2.1, pos.y * 1.4, pos.z);
+        // float distFromCenter = clamp(pow(abs(length(pos - vec3(modelposition))) * 10.0, 4.0), 0.0, 1.0);
+        float dist = 15.0 + 5.0 * clamp(fbm3D(pos.x + sin(u_Time / 2.0 + 5.0) + cos(u_Time), pos.y - sin(u_Time/2.0 + 2.0), pos.z + cos(u_Time), 1.0, 5.0, 5.0, 5.0), 0.0, 1.0);
+        float distFromCenter = clamp(pow(length(sprayPos - vec3(modelposition)) / dist, 0.5), 0.0, 1.0);
         density *= 1.0 - distFromCenter;
+
+        float x = 0.5 * (fs_Pos.x + 1.0);
+        float y = 0.5 * (fs_Pos.y + 1.0);
+        vec4 textureColor = texture(u_Image2, vec2(x,  y));
+        float depthVal = textureColor.r;
+        float posDepth = length(sprayPos - u_CameraPos.xyz) / 89.0;
+        // if (depthVal > 0.74) {
+        if (depthVal > posDepth || sprayPos.y < -28.0) {
+          density = 0.0;
+        }
+        // density *= 15.0 / distFromCenter;
+        density *= 8.0;
+
+
+        // if (distFromCenter > 10.0) {
+        //   density = 0.0;
+        // }
         // density = 0.0;
         transmittance *= exp(-scatteringCoeff * density * dt);
         
@@ -237,7 +276,7 @@ vec4 RaymarchScene( in vec3 origin, in vec3 dir )
             break;
         }
         
-        dt = max(0.04, 0.02 * t);
+        dt = max(0.04, 0.04 * t);
         t += dt;
     }
     

@@ -4,6 +4,7 @@ precision highp float;
 uniform vec3 u_Eye, u_Ref, u_Up;
 uniform vec2 u_Dimensions;
 uniform sampler2D u_Image1;
+uniform vec4 u_Color; // The color with which to render this instance of geometry.
 
 
 
@@ -24,7 +25,7 @@ void main() {
     // float y = 0.5 * (fs_Pos.y + 1.0);
     // vec2 position = vec2(x,y);
 
-    vec4 albedo = vec4(1.0, 0.99, 0.95, 1.0);
+    vec4 albedo = u_Color;
     // float height = getHeight(position);
 
     // vec2 posxP = position + vec2(epsilon, 0.0);

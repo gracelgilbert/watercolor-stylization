@@ -148,6 +148,12 @@ function readTextFile(file) {
 
 /***/ }),
 /* 2 */
+/***/ (function(module, exports) {
+
+module.exports = "#version 300 es\nprecision highp float;\n\n// The vertex shader used to render the background of the scene\n\nin vec4 vs_Pos;\nout vec2 fs_Pos;\n\nvoid main() {\n  fs_Pos = vs_Pos.xy;\n  gl_Position = vs_Pos;\n}\n"
+
+/***/ }),
+/* 3 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -183,12 +189,6 @@ function readTextFile(file) {
 
 
 
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports) {
-
-module.exports = "#version 300 es\nprecision highp float;\n\n// The vertex shader used to render the background of the scene\n\nin vec4 vs_Pos;\nout vec2 fs_Pos;\n\nvoid main() {\n  fs_Pos = vs_Pos.xy;\n  gl_Position = vs_Pos;\n}\n"
 
 /***/ }),
 /* 4 */
@@ -282,7 +282,7 @@ function normalize(out, a) {
 /* 6 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\n\n//This is a vertex shader. While it is called a \"shader\" due to outdated conventions, this file\n//is used to apply matrix transformations to the arrays of vertex data passed to it.\n//Since this code is run on your GPU, each vertex is transformed simultaneously.\n//If it were run on your CPU, each vertex would have to be processed in a FOR loop, one at a time.\n//This simultaneous transformation allows your program to run much faster, especially when rendering\n//geometry with millions of vertices.\n\nuniform mat4 u_Model;       // The matrix that defines the transformation of the\n                            // object we're rendering. In this assignment,\n                            // this will be the result of traversing your scene graph.\n\nuniform mat4 u_ModelInvTr;  // The inverse transpose of the model matrix.\n                            // This allows us to transform the object's normals properly\n                            // if the object has been non-uniformly scaled.\nuniform vec2 u_Dimensions;\n\nuniform mat4 u_ViewProj;    // The matrix that defines the camera's transformation.\n                            // We've written a static matrix for you to use for HW2,\n                            // but in HW3 you'll have to generate one yourself\nuniform vec4 u_CameraPos;\nuniform float u_BleedScale;\nuniform float u_IsWater;\nuniform float u_Time;\n\nin vec4 vs_Pos;             // The array of vertex positions passed to the shader\n\nin vec4 vs_Nor;             // The array of vertex normals passed to the shader\n\nin vec4 vs_Col;             // The array of vertex colors passed to the shader.\n\nout vec4 fs_Pos;\nout vec4 fs_Nor;            // The array of normals that has been transformed by u_ModelInvTr. This is implicitly passed to the fragment shader.\nout vec4 fs_LightVec;       // The direction in which our virtual light lies, relative to each vertex. This is implicitly passed to the fragment shader.\nout vec4 fs_Col;            // The color of each vertex. This is implicitly passed to the fragment shader.\nout vec2 screenspace;\n\nout float bleedAmount;\nout float edgeDarkening;\nout float edgeValue;\n\n\nout vec4 viewspace;\n\nconst vec4 lightPos = vec4(10, 15, 1, 1); //The position of our virtual light, which is used to compute the shading of\n                                        //the geometry in the fragment shader.\n\nfloat random1( vec2 p , vec2 seed) {\n  return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);\n}\n\nfloat random1( vec3 p , vec3 seed) {\n  return fract(sin(dot(p + seed, vec3(987.654, 123.456, 531.975))) * 85734.3545);\n}\n\nvec2 random2( vec2 p , vec2 seed) {\n  return fract(sin(vec2(dot(p + seed, vec2(311.7, 127.1)), dot(p + seed, vec2(269.5, 183.3)))) * 85734.3545);\n}\n\nfloat interpNoise2d(float x, float y) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n\n  float v1 = random1(vec2(intX, intY), vec2(1.f, 1.f));\n  float v2 = random1(vec2(intX + 1.f, intY), vec2(1.f, 1.f));\n  float v3 = random1(vec2(intX, intY + 1.f), vec2(1.f, 1.f));\n  float v4 = random1(vec2(intX + 1.f, intY + 1.f), vec2(1.f, 1.f));\n\n  float i1 = mix(v1, v2, fractX);\n  float i2 = mix(v3, v4, fractX);\n  return mix(i1, i2, fractY);\n  return 2.0;\n\n}\n\nfloat interpNoise3d(float x, float y, float z) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n  float intZ = floor(z);\n  float fractZ = fract(z);\n\n  float v1 = random1(vec3(intX, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v2 = random1(vec3(intX, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v3 = random1(vec3(intX + 1.0, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v4 = random1(vec3(intX + 1.0, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v5 = random1(vec3(intX, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n  float v6 = random1(vec3(intX, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v7 = random1(vec3(intX + 1.0, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v8 = random1(vec3(intX + 1.0, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n\n  float i1 = smoothstep(0.0, 1.0, mix(v2, v3, fractX));\n  float i2 = smoothstep(0.0, 1.0, mix(v1, v4, fractX));\n  float i3 = smoothstep(0.0, 1.0, mix(v6, v7, fractX));\n  float i4 = smoothstep(0.0, 1.0, mix(v5, v8, fractX));\n\n  float j1 = smoothstep(0.0, 1.0, mix(i4, i3, fractZ));\n  float j2 = smoothstep(0.0, 1.0, mix(i2, i1, fractZ));\n\n  return smoothstep(0.0, 1.0, mix(j2, j1, fractY));\n\n}\n\nfloat computeWorley(float x, float y, float numRows, float numCols) {\n    float xPos = x * float(numCols) / 20.f;\n    float yPos = y * float(numRows) / 20.f;\n\n    float minDist = 60.f;\n    vec2 minVec = vec2(0.f, 0.f);\n\n    for (int i = -1; i < 2; i++) {\n        for (int j = -1; j < 2; j++) {\n            vec2 currGrid = vec2(floor(float(xPos)) + float(i), floor(float(yPos)) + float(j));\n            vec2 currNoise = currGrid + random2(currGrid, vec2(2.0, 1.0));\n            float currDist = distance(vec2(xPos, yPos), currNoise);\n            if (currDist <= minDist) {\n                minDist = currDist;\n                minVec = currNoise;\n            }\n        }\n    }\n    return minDist;\n    // return 2.0;\n}\n\nfloat fbmWorley(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += computeWorley( (x / xScale) * freq, (y / yScale) * freq, 2.0, 2.0) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm3D(float x, float y, float z, float height, float xScale, float yScale, float zScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 2;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}                                        \n\nfloat fbm3DHighOct(float x, float y, float z, float height, float xScale, float yScale, float zScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}     \n\nvoid main()\n{\n    fs_Col = vs_Col;                         // Pass the vertex colors to the fragment shader for interpolation\n    fs_Pos = vs_Pos;\n    mat3 invTranspose = mat3(u_ModelInvTr);\n    fs_Nor = normalize(vec4(invTranspose * vec3(vs_Nor), 0));          // Pass the vertex normals to the fragment shader for interpolation.\n                                                            // Transform the geometry's normals by the inverse transpose of the\n                                                            // model matrix. This is necessary to ensure the normals remain\n                                                            // perpendicular to the surface after the surface is transformed by\n                                                            // the model matrix.\n\n    float a = 1.0;\n    edgeValue = pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);\n    vec4 offset = 0.03 * (sin(vs_Pos * 10.0) + sin((vs_Pos * 10.0) + 30.0)) * edgeValue;\n    // offset = vec4(0.0);\n\n    bleedAmount = clamp(pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.8, 2.0, 2.0, 2.0), 13.0), 0.0, 1.0);\n        // bleedAmount = 0.0;\n\n    offset += u_BleedScale * bleedAmount * fs_Nor;\n    if (u_IsWater > 0.5) {\n      offset += fs_Nor * fbm3D(fs_Pos.x, fs_Pos.y + u_Time/3.0, fs_Pos.z, 0.1, 0.2, 1.5, 0.2) * (abs(fs_Nor.z) + abs(fs_Nor.x));\n    }\n\n    offset.w = 0.0;\n\n\n    edgeDarkening = clamp(pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 1.0, 1.0, 1.0), 5.0), 0.0, 1.0);\n    // edgeDarkening = 1.0;\n    edgeDarkening *= 1.0 - bleedAmount;\n    \n    // offset = vec4(0.0);\n\n    vec4 modelposition = u_Model * vs_Pos + offset;   // Temporarily store the transformed vertex positions for use below\n    // vec4 modelposition = u_Model * vs_Pos;   // Temporarily store the transformed vertex positions for use below\n    fs_Pos = modelposition;\n\n    fs_LightVec = normalize(lightPos - modelposition);  // Compute the direction in which the light source lies\n    viewspace = u_ViewProj * modelposition;\n    // fs_Pos = modelposition;\n\n    \n\n    gl_Position = viewspace;// gl_Position is a built-in variable of OpenGL which is\n                                             // used to render the final positions of the geometry's vertices\n\n    vec3 ndc = gl_Position.xyz / gl_Position.w; //perspective divide/normalize\n    vec2 viewportCoord = ndc.xy * 0.5 + 0.5; //ndc is -1 to 1 in GL. scale for 0 to 1\n    screenspace = viewportCoord ;\n\n}\n"
+module.exports = "#version 300 es\n\n//This is a vertex shader. While it is called a \"shader\" due to outdated conventions, this file\n//is used to apply matrix transformations to the arrays of vertex data passed to it.\n//Since this code is run on your GPU, each vertex is transformed simultaneously.\n//If it were run on your CPU, each vertex would have to be processed in a FOR loop, one at a time.\n//This simultaneous transformation allows your program to run much faster, especially when rendering\n//geometry with millions of vertices.\n\nuniform mat4 u_Model;       // The matrix that defines the transformation of the\n                            // object we're rendering. In this assignment,\n                            // this will be the result of traversing your scene graph.\n\nuniform mat4 u_ModelInvTr;  // The inverse transpose of the model matrix.\n                            // This allows us to transform the object's normals properly\n                            // if the object has been non-uniformly scaled.\nuniform vec2 u_Dimensions;\n\nuniform mat4 u_ViewProj;    // The matrix that defines the camera's transformation.\n                            // We've written a static matrix for you to use for HW2,\n                            // but in HW3 you'll have to generate one yourself\nuniform vec4 u_CameraPos;\nuniform float u_BleedScale;\nuniform float u_IsWater;\nuniform float u_Time;\n\nin vec4 vs_Pos;             // The array of vertex positions passed to the shader\n\nin vec4 vs_Nor;             // The array of vertex normals passed to the shader\n\nin vec4 vs_Col;             // The array of vertex colors passed to the shader.\n\nout vec4 fs_Pos;\nout vec4 fs_Nor;            // The array of normals that has been transformed by u_ModelInvTr. This is implicitly passed to the fragment shader.\nout vec4 fs_LightVec;       // The direction in which our virtual light lies, relative to each vertex. This is implicitly passed to the fragment shader.\nout vec4 fs_Col;            // The color of each vertex. This is implicitly passed to the fragment shader.\nout vec2 screenspace;\n\nout float bleedAmount;\nout float edgeDarkening;\nout float edgeValue;\n\n\nout vec4 viewspace;\n\nconst vec4 lightPos = vec4(10, 15, 1, 1); //The position of our virtual light, which is used to compute the shading of\n                                        //the geometry in the fragment shader.\n\nfloat random1( vec2 p , vec2 seed) {\n  return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);\n}\n\nfloat random1( vec3 p , vec3 seed) {\n  return fract(sin(dot(p + seed, vec3(987.654, 123.456, 531.975))) * 85734.3545);\n}\n\nvec2 random2( vec2 p , vec2 seed) {\n  return fract(sin(vec2(dot(p + seed, vec2(311.7, 127.1)), dot(p + seed, vec2(269.5, 183.3)))) * 85734.3545);\n}\n\nfloat interpNoise2d(float x, float y) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n\n  float v1 = random1(vec2(intX, intY), vec2(1.f, 1.f));\n  float v2 = random1(vec2(intX + 1.f, intY), vec2(1.f, 1.f));\n  float v3 = random1(vec2(intX, intY + 1.f), vec2(1.f, 1.f));\n  float v4 = random1(vec2(intX + 1.f, intY + 1.f), vec2(1.f, 1.f));\n\n  float i1 = mix(v1, v2, fractX);\n  float i2 = mix(v3, v4, fractX);\n  return mix(i1, i2, fractY);\n  return 2.0;\n\n}\n\nfloat interpNoise3d(float x, float y, float z) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n  float intZ = floor(z);\n  float fractZ = fract(z);\n\n  float v1 = random1(vec3(intX, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v2 = random1(vec3(intX, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v3 = random1(vec3(intX + 1.0, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v4 = random1(vec3(intX + 1.0, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v5 = random1(vec3(intX, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n  float v6 = random1(vec3(intX, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v7 = random1(vec3(intX + 1.0, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v8 = random1(vec3(intX + 1.0, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n\n  float i1 = smoothstep(0.0, 1.0, mix(v2, v3, fractX));\n  float i2 = smoothstep(0.0, 1.0, mix(v1, v4, fractX));\n  float i3 = smoothstep(0.0, 1.0, mix(v6, v7, fractX));\n  float i4 = smoothstep(0.0, 1.0, mix(v5, v8, fractX));\n\n  float j1 = smoothstep(0.0, 1.0, mix(i4, i3, fractZ));\n  float j2 = smoothstep(0.0, 1.0, mix(i2, i1, fractZ));\n\n  return smoothstep(0.0, 1.0, mix(j2, j1, fractY));\n\n}\n\nfloat computeWorley(float x, float y, float numRows, float numCols) {\n    float xPos = x * float(numCols) / 20.f;\n    float yPos = y * float(numRows) / 20.f;\n\n    float minDist = 60.f;\n    vec2 minVec = vec2(0.f, 0.f);\n\n    for (int i = -1; i < 2; i++) {\n        for (int j = -1; j < 2; j++) {\n            vec2 currGrid = vec2(floor(float(xPos)) + float(i), floor(float(yPos)) + float(j));\n            vec2 currNoise = currGrid + random2(currGrid, vec2(2.0, 1.0));\n            float currDist = distance(vec2(xPos, yPos), currNoise);\n            if (currDist <= minDist) {\n                minDist = currDist;\n                minVec = currNoise;\n            }\n        }\n    }\n    return minDist;\n    // return 2.0;\n}\n\nfloat fbmWorley(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += computeWorley( (x / xScale) * freq, (y / yScale) * freq, 2.0, 2.0) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm3D(float x, float y, float z, float height, float xScale, float yScale, float zScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 2;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}                                        \n\nfloat fbm3DHighOct(float x, float y, float z, float height, float xScale, float yScale, float zScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}   \n\nmat4 rotationMatrix(vec3 axis, float angle)\n{\n    axis = normalize(axis);\n    float s = sin(angle);\n    float c = cos(angle);\n    float oc = 1.0 - c;\n    \n    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,\n                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,\n                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,\n                0.0,                                0.0,                                0.0,                                1.0);\n}\n\nvoid main()\n{\n    fs_Col = vs_Col;                         // Pass the vertex colors to the fragment shader for interpolation\n    fs_Pos = vs_Pos;\n    mat3 invTranspose = mat3(u_ModelInvTr);\n    fs_Nor = normalize(vec4(invTranspose * vec3(vs_Nor), 0));          // Pass the vertex normals to the fragment shader for interpolation.\n                                                            // Transform the geometry's normals by the inverse transpose of the\n                                                            // model matrix. This is necessary to ensure the normals remain\n                                                            // perpendicular to the surface after the surface is transformed by\n                                                            // the model matrix.\n\n    float a = 1.0;\n    edgeValue = pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);\n    vec4 offset = 0.03 * (sin(vs_Pos * 10.0) + sin((vs_Pos * 10.0) + 30.0)) * edgeValue;\n    offset = vec4(0.0);\n\n    bleedAmount = clamp(pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.8, 2.0, 2.0, 2.0), 13.0), 0.0, 1.0);\n        // bleedAmount = 0.0;\n\n    offset += u_BleedScale * bleedAmount * fs_Nor;\n    if (u_IsWater > 0.5 && u_IsWater < 1.5) {\n      offset += fs_Nor * fbm3D(fs_Pos.x, fs_Pos.y + u_Time/3.0, fs_Pos.z, 0.1, 0.2, 1.5, 0.2) * (abs(fs_Nor.z) + abs(fs_Nor.x));\n    } \n    if (u_IsWater > 1.5) {\n      fs_Pos = fs_Pos - vec4(-3.0, 2.1, 2.0, 0.0);\n      fs_Pos = rotationMatrix(vec3(0.0, 0.0, 1.0), u_Time / 4.0) * fs_Pos;\n      fs_Pos = fs_Pos + vec4(-3.0, 2.1, 2.0, 0.0);\n    }\n\n    offset.w = 0.0;\n\n\n    edgeDarkening = clamp(pow(fbm3DHighOct(fs_Pos.x, fs_Pos.y, fs_Pos.z, 1.0, 1.0, 1.0, 1.0), 5.0), 0.0, 1.0);\n    // edgeDarkening = 1.0;\n    edgeDarkening *= 1.0 - bleedAmount;\n    \n    // offset = vec4(0.0);\n\n    vec4 modelposition = u_Model * fs_Pos + offset;   // Temporarily store the transformed vertex positions for use below\n    // vec4 modelposition = u_Model * vs_Pos;   // Temporarily store the transformed vertex positions for use below\n    fs_Pos = modelposition;\n\n    fs_LightVec = normalize(lightPos - modelposition);  // Compute the direction in which the light source lies\n    viewspace = u_ViewProj * modelposition;\n    // fs_Pos = modelposition;\n\n    \n\n    gl_Position = viewspace;// gl_Position is a built-in variable of OpenGL which is\n                                             // used to render the final positions of the geometry's vertices\n\n    vec3 ndc = gl_Position.xyz / gl_Position.w; //perspective divide/normalize\n    vec2 viewportCoord = ndc.xy * 0.5 + 0.5; //ndc is -1 to 1 in GL. scale for 0 to 1\n    screenspace = viewportCoord ;\n\n}\n"
 
 /***/ }),
 /* 7 */
@@ -5983,7 +5983,7 @@ function determinant(a) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_stats_js__ = __webpack_require__(28);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_stats_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_stats_js__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_dat_gui__ = __webpack_require__(29);
@@ -6012,6 +6012,12 @@ let water;
 let rock;
 let darkBush;
 let lightBush;
+let windmill;
+let roof;
+let spin;
+let fence;
+let grass;
+let sceneVersion = 1;
 let ColorImage;
 let zBufferImage;
 let ControlImage;
@@ -6036,18 +6042,37 @@ let rbStyle;
 let screenQuad;
 let time = 0.0;
 function loadScene() {
-    let objRock = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./Rock.obj');
-    rock = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objRock, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
-    rock.create();
-    let objWater = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./Water.obj');
-    water = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objWater, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
-    water.create();
-    let objDarkBush = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./DarkBush.obj');
-    darkBush = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objDarkBush, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
-    darkBush.create();
-    let objLightBush = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./LightBush.obj');
-    lightBush = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objLightBush, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
-    lightBush.create();
+    if (sceneVersion == 0) {
+        let objRock = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./Rock.obj');
+        rock = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objRock, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        rock.create();
+        let objWater = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./Water.obj');
+        water = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objWater, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        water.create();
+        let objDarkBush = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./DarkBush.obj');
+        darkBush = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objDarkBush, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        darkBush.create();
+        let objLightBush = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./LightBush.obj');
+        lightBush = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objLightBush, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        lightBush.create();
+    }
+    else {
+        let objMill = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./windmillStructure.obj');
+        windmill = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objMill, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        windmill.create();
+        let objRoof = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./windmillCap.obj');
+        roof = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objRoof, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        roof.create();
+        let objSpin = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./windmillSpin.obj');
+        spin = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objSpin, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        spin.create();
+        let objFence = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./fence.obj');
+        fence = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objFence, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        fence.create();
+        let objGrass = Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* readTextFile */])('./grass.obj');
+        grass = new __WEBPACK_IMPORTED_MODULE_8__geometry_Mesh__["a" /* default */](objGrass, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+        grass.create();
+    }
 }
 function main() {
     // Initial display for framerate
@@ -6093,24 +6118,28 @@ function main() {
         new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(74)),
     ]);
     const paper = new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(3)),
+        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(2)),
         new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(75)),
     ]);
     const blur = new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(3)),
+        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(2)),
         new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(76)),
     ]);
     const bilateral = new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(3)),
+        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(2)),
         new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(77)),
     ]);
     const stylization = new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(3)),
+        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(2)),
         new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(78)),
     ]);
     const spray = new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(3)),
+        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(2)),
         new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(79)),
+    ]);
+    const clouds = new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["b" /* default */]([
+        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(2)),
+        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(80)),
     ]);
     loadScene();
     function createTextures() {
@@ -6196,82 +6225,166 @@ function main() {
         gl.bindTexture(gl.TEXTURE_2D, PaperImage);
         color.setImage1();
         color.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
-        color.setViewProjMatrix(camera.projectionMatrix);
+        // color.setViewProjMatrix(camera.projectionMatrix);
         // color.set
         color.setTime(time);
         depth.setTime(time);
         control.setTime(time);
         spray.setTime(time);
+        clouds.setTime(time);
         spray.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+        // spray.setViewProjMatrix(camera.projectionMatrix);
         time++;
         // Render 3D Scene with Color:
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(169.0 / 255, 115.0 / 255, 235.0 / 255, 1.0), paper, [screenQuad]);
-        color.setBleed(0.2);
-        color.setID(0.0);
-        color.setWater(1.0);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
-        color.setBleed(0.2);
-        color.setID(0.5);
-        color.setWater(0.0);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 3.0 * 0.064, 3.0 * 0.046, 1.0), color, [rock]);
-        color.setBleed(0.02);
-        color.setID(0.7);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(1.0 * 0.087, 3.0 * 0.064, 1.0 * 0.046, 1.0), color, [darkBush]);
-        color.setBleed(0.02);
-        color.setID(0.9);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), color, [lightBush]);
-        /*
-        SECOND PASS: DEPTH MAP
-        */
-        // bind Depth pass texture, fb, rb
-        gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, rbDepth);
-        // Setup texture, fb, rb
-        textureSetup();
-        fbrbSetup(zBufferImage, fbDepth, rbDepth);
-        depth.setViewProjMatrix(camera.projectionMatrix);
-        depth.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
-        // Render 3D scene with Depth:
-        depth.setBleed(0.2);
-        depth.setWater(1.0);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(50.0 / 255, 165.0 / 255, 170.0 / 255, 1.0), depth, [water]);
-        depth.setBleed(0.2);
-        depth.setWater(0.0);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(169.0 / 255, 115.0 / 255, 235.0 / 255, 1.0), depth, [rock]);
-        depth.setBleed(0.02);
-        depth.setID(0.7);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(1.0 * 0.087, 2.0 * 0.064, 1.0 * 0.046, 1.0), depth, [darkBush]);
-        depth.setBleed(0.02);
-        depth.setID(0.9);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), depth, [lightBush]);
-        /*
-        THIRD PASS: CONTROLS
-        */
-        // bind Control pass texture, fb, rb
-        gl.bindTexture(gl.TEXTURE_2D, ControlImage);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
-        // Setup texture, fb, rb
-        textureSetup();
-        fbrbSetup(ControlImage, fbControl, rbControl);
-        // Render 3D scene with Control:
-        control.setBleed(0.2);
-        control.setID(0.0);
-        control.setViewProjMatrix(camera.projectionMatrix);
-        control.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
-        control.setWater(1.0);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(50.0 / 255, 165.0 / 255, 170.0 / 255, 1.0), control, [water]);
-        control.setBleed(0.2);
-        control.setID(0.5);
-        control.setWater(0.0);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(169.0 / 255, 115.0 / 255, 235.0 / 255, 1.0), control, [rock]);
-        control.setBleed(0.02);
-        control.setID(0.7);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), control, [darkBush]);
-        control.setBleed(0.02);
-        control.setID(0.9);
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), control, [lightBush]);
+        if (sceneVersion == 0) {
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(1.0, 0.99, 0.95, 1.0), paper, [screenQuad]);
+            color.setBleed(0.2);
+            color.setID(0.0);
+            color.setWater(1.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
+            color.setBleed(0.2);
+            color.setID(0.5);
+            color.setWater(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 3.0 * 0.064, 3.0 * 0.046, 1.0), color, [rock]);
+            color.setBleed(0.02);
+            color.setID(0.7);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(1.0 * 0.087, 3.0 * 0.064, 1.0 * 0.046, 1.0), color, [darkBush]);
+            color.setBleed(0.02);
+            color.setID(0.9);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), color, [lightBush]);
+            /*
+            SECOND PASS: DEPTH MAP
+            */
+            // bind Depth pass texture, fb, rb
+            gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbDepth);
+            // Setup texture, fb, rb
+            textureSetup();
+            fbrbSetup(zBufferImage, fbDepth, rbDepth);
+            depth.setViewProjMatrix(camera.projectionMatrix);
+            depth.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+            // Render 3D scene with Depth:
+            depth.setBleed(0.2);
+            depth.setWater(1.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(50.0 / 255, 165.0 / 255, 170.0 / 255, 1.0), depth, [water]);
+            depth.setBleed(0.2);
+            depth.setWater(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(169.0 / 255, 115.0 / 255, 235.0 / 255, 1.0), depth, [rock]);
+            depth.setBleed(0.02);
+            depth.setID(0.7);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(1.0 * 0.087, 2.0 * 0.064, 1.0 * 0.046, 1.0), depth, [darkBush]);
+            depth.setBleed(0.02);
+            depth.setID(0.9);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), depth, [lightBush]);
+            /*
+            THIRD PASS: CONTROLS
+            */
+            // bind Control pass texture, fb, rb
+            gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
+            // Setup texture, fb, rb
+            textureSetup();
+            fbrbSetup(ControlImage, fbControl, rbControl);
+            // Render 3D scene with Control:
+            control.setBleed(0.2);
+            control.setID(0.0);
+            control.setViewProjMatrix(camera.projectionMatrix);
+            control.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+            control.setWater(1.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(50.0 / 255, 165.0 / 255, 170.0 / 255, 1.0), control, [water]);
+            control.setBleed(0.2);
+            control.setID(0.5);
+            control.setWater(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(169.0 / 255, 115.0 / 255, 235.0 / 255, 1.0), control, [rock]);
+            control.setBleed(0.02);
+            control.setID(0.7);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), control, [darkBush]);
+            control.setBleed(0.02);
+            control.setID(0.9);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), control, [lightBush]);
+        }
+        else {
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(220.0 / 255, 230.0 / 255, 255.0 / 255, 1.0), paper, [screenQuad]);
+            color.setBleed(0.25);
+            color.setID(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(100 / 255, 80 / 255, 20 / 155, 1.0), color, [windmill]);
+            color.setBleed(0.2);
+            color.setID(0.5);
+            color.setWater(2.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(250 / 255, 245. / 255, 230 / 255, 1.0), color, [spin]);
+            color.setBleed(0.02);
+            color.setID(0.7);
+            color.setWater(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(130 / 255, 20 / 255, 30 / 255, 1.0), color, [roof]);
+            color.setBleed(0.1);
+            color.setID(0.9);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(230 / 255, 225. / 255, 200 / 255, 1.0), color, [fence]);
+            color.setBleed(0.1);
+            color.setID(0.95);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), color, [grass]);
+            /*
+            SECOND PASS: DEPTH MAP
+            */
+            // bind Depth pass texture, fb, rb
+            gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbDepth);
+            // Setup texture, fb, rb
+            textureSetup();
+            fbrbSetup(zBufferImage, fbDepth, rbDepth);
+            depth.setViewProjMatrix(camera.projectionMatrix);
+            depth.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+            // Render 3D scene with Depth:
+            depth.setBleed(0.2);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(50.0 / 255, 165.0 / 255, 170.0 / 255, 1.0), depth, [windmill]);
+            depth.setBleed(0.2);
+            depth.setWater(0.0);
+            depth.setWater(2.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(169.0 / 255, 115.0 / 255, 235.0 / 255, 1.0), depth, [spin]);
+            depth.setBleed(0.02);
+            depth.setID(0.7);
+            depth.setWater(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(1.0 * 0.087, 2.0 * 0.064, 1.0 * 0.046, 1.0), depth, [roof]);
+            depth.setBleed(0.02);
+            depth.setID(0.9);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), depth, [fence]);
+            depth.setBleed(0.02);
+            depth.setID(0.95);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), depth, [grass]);
+            /*
+            THIRD PASS: CONTROLS
+            */
+            // bind Control pass texture, fb, rb
+            gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbControl);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbControl);
+            // Setup texture, fb, rb
+            textureSetup();
+            fbrbSetup(ControlImage, fbControl, rbControl);
+            // Render 3D scene with Control:
+            control.setBleed(0.2);
+            control.setID(0.0);
+            control.setViewProjMatrix(camera.projectionMatrix);
+            control.setCameraPos(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+            control.setWater(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(50.0 / 255, 165.0 / 255, 170.0 / 255, 1.0), control, [windmill]);
+            control.setBleed(0.2);
+            control.setID(0.5);
+            control.setWater(2.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(169.0 / 255, 115.0 / 255, 235.0 / 255, 1.0), control, [spin]);
+            control.setBleed(0.02);
+            control.setID(0.7);
+            control.setWater(0.0);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), control, [roof]);
+            control.setBleed(0.02);
+            control.setID(0.9);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), control, [fence]);
+            control.setBleed(0.02);
+            control.setID(0.95);
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(3.0 * 0.087, 8.0 * 0.064, 3.0 * 0.046, 1.0), control, [grass]);
+        }
         /*
         FOURTH PASS: GAUSSIAN BLUR
         */
@@ -6311,35 +6424,74 @@ function main() {
         bilateral.setImage3();
         // Render 3D scene with blur:
         renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.8, 0.7, 1.0, 1.0), bilateral, [screenQuad]);
-        // bind to screen and bind texture
-        // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, StyleImage);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, rbStyle);
-        textureSetup();
-        fbrbSetup(StyleImage, fbStyle, rbStyle);
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, ColorImage);
-        stylization.setImage1();
-        gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
-        stylization.setImage2();
-        gl.activeTexture(gl.TEXTURE3);
-        gl.bindTexture(gl.TEXTURE_2D, BleededImage);
-        stylization.setImage3();
-        gl.activeTexture(gl.TEXTURE4);
-        gl.bindTexture(gl.TEXTURE_2D, ControlImage);
-        stylization.setImage4();
-        gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        // render stylization to texture
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.8, 0.7, 1.0, 1.0), stylization, [screenQuad]);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, StyleImage);
-        stylization.setImage1();
-        renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.8, 0.7, 1.0, 1.0), spray, [screenQuad]);
+        if (sceneVersion == 0) {
+            // bind to screen and bind texture
+            // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbStyle);
+            textureSetup();
+            fbrbSetup(StyleImage, fbStyle, rbStyle);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+            stylization.setImage1();
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+            stylization.setImage2();
+            gl.activeTexture(gl.TEXTURE3);
+            gl.bindTexture(gl.TEXTURE_2D, BleededImage);
+            stylization.setImage3();
+            gl.activeTexture(gl.TEXTURE4);
+            gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+            stylization.setImage4();
+            gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            // render stylization to texture
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.8, 0.7, 1.0, 1.0), stylization, [screenQuad]);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+            spray.setImage1();
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+            spray.setImage2();
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.8, 0.7, 1.0, 1.0), spray, [screenQuad]);
+        }
+        else {
+            // bind to screen and bind texture
+            // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbStyle);
+            textureSetup();
+            fbrbSetup(StyleImage, fbStyle, rbStyle);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, ColorImage);
+            stylization.setImage1();
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, BlurredImage);
+            stylization.setImage2();
+            gl.activeTexture(gl.TEXTURE3);
+            gl.bindTexture(gl.TEXTURE_2D, BleededImage);
+            stylization.setImage3();
+            gl.activeTexture(gl.TEXTURE4);
+            gl.bindTexture(gl.TEXTURE_2D, ControlImage);
+            stylization.setImage4();
+            gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            // render stylization to texture
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.8, 0.7, 1.0, 1.0), stylization, [screenQuad]);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, StyleImage);
+            spray.setImage1();
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, zBufferImage);
+            spray.setImage2();
+            renderer.render(camera, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(0.8, 0.7, 1.0, 1.0), clouds, [screenQuad]);
+        }
         // renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), paper,[screenQuad]);
         stats.end();
         // Tell the browser to call `tick` again whenever it renders a new frame
@@ -13391,7 +13543,7 @@ class ScreenQuad extends __WEBPACK_IMPORTED_MODULE_0__rendering_gl_Drawable__["a
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(1);
 
 
@@ -13436,7 +13588,7 @@ class OpenGLRenderer {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(3);
 var CameraControls = __webpack_require__(35);
 
 class Camera {
@@ -16563,7 +16715,7 @@ module.exports = true;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(1);
 
 
@@ -16733,7 +16885,7 @@ class ShaderProgram {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__rendering_gl_Drawable__ = __webpack_require__(12);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__globals__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_webgl_obj_loader__ = __webpack_require__(71);
@@ -16826,7 +16978,7 @@ module.exports = "#version 300 es\n\n// This is a fragment shader. If you've ope
 /* 75 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\nprecision highp float;\n\nuniform vec3 u_Eye, u_Ref, u_Up;\nuniform vec2 u_Dimensions;\nuniform sampler2D u_Image1;\n\n\n\nconst vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of\n                                        //the geometry in the fragment shader.\nuniform vec4 u_CameraPos;\n\n\nin vec2 fs_Pos;\nout vec4 out_Col;\n\nvoid main() {\n\n    // float epsilon = 0.0001;    \n\n\n    // float x = 0.5 * (fs_Pos.x + 1.0);\n    // float y = 0.5 * (fs_Pos.y + 1.0);\n    // vec2 position = vec2(x,y);\n\n    vec4 albedo = vec4(1.0, 0.99, 0.95, 1.0);\n    // float height = getHeight(position);\n\n    // vec2 posxP = position + vec2(epsilon, 0.0);\n    // vec2 posxN = position - vec2(epsilon, 0.0);\n\n    // vec2 posyP = position + vec2(0.0, epsilon);\n    // vec2 posyN = position - vec2(0.0, epsilon);\n\n\n    // float right = getHeight(posxP);\n    // float left = getHeight(posxN);\n    // float up = getHeight(posyP);\n    // float down = getHeight(posyN);\n\n    // float nor1 = 0.5 * (right - left);\n    // float nor2 = 0.5 * (down - up);\n    // float nor3 = 1.0;\n\n    // // float dx = left - height;\n    // // float dy = up - height;\n    // // fs_gradientScale = 500.0 * pow(dx * dx + dy * dy, 0.4);\n\n    // vec4 normal = vec4(nor1, nor2, nor3, 0.f);\n\n    // vec4 fs_LightVec = normalize(lightPos);  // Compute the direction in which the light source lies\n\n\n    // float diffuseTerm = dot(normalize(normal), normalize(fs_LightVec));\n    //     // Avoid negative lighting values\n    //     // diffuseTerm = clamp(diffuseTerm, 0, 1);\n\n    // float ambientTerm = 0.1;\n\n    // float lightIntensity = diffuseTerm + ambientTerm;   //Add a small float value to the color multiplier\n    //                                                     //to simulate ambient lighting. This ensures that faces that are not\n    //                                                     //lit by our point light are not completely black.\n\n    // out_Col = vec4(diffuseTerm * 2.5 * albedo.rgb, 1.0);\n    out_Col = vec4(albedo.rgb, 1.0);\n\n\n    // accumColor = texture(u_Image1, vec2( x,  y));\n    // out_Col = vec4(albedo.rgb * height, 1.0);\n\n}\n"
+module.exports = "#version 300 es\nprecision highp float;\n\nuniform vec3 u_Eye, u_Ref, u_Up;\nuniform vec2 u_Dimensions;\nuniform sampler2D u_Image1;\nuniform vec4 u_Color; // The color with which to render this instance of geometry.\n\n\n\nconst vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of\n                                        //the geometry in the fragment shader.\nuniform vec4 u_CameraPos;\n\n\nin vec2 fs_Pos;\nout vec4 out_Col;\n\nvoid main() {\n\n    // float epsilon = 0.0001;    \n\n\n    // float x = 0.5 * (fs_Pos.x + 1.0);\n    // float y = 0.5 * (fs_Pos.y + 1.0);\n    // vec2 position = vec2(x,y);\n\n    vec4 albedo = u_Color;\n    // float height = getHeight(position);\n\n    // vec2 posxP = position + vec2(epsilon, 0.0);\n    // vec2 posxN = position - vec2(epsilon, 0.0);\n\n    // vec2 posyP = position + vec2(0.0, epsilon);\n    // vec2 posyN = position - vec2(0.0, epsilon);\n\n\n    // float right = getHeight(posxP);\n    // float left = getHeight(posxN);\n    // float up = getHeight(posyP);\n    // float down = getHeight(posyN);\n\n    // float nor1 = 0.5 * (right - left);\n    // float nor2 = 0.5 * (down - up);\n    // float nor3 = 1.0;\n\n    // // float dx = left - height;\n    // // float dy = up - height;\n    // // fs_gradientScale = 500.0 * pow(dx * dx + dy * dy, 0.4);\n\n    // vec4 normal = vec4(nor1, nor2, nor3, 0.f);\n\n    // vec4 fs_LightVec = normalize(lightPos);  // Compute the direction in which the light source lies\n\n\n    // float diffuseTerm = dot(normalize(normal), normalize(fs_LightVec));\n    //     // Avoid negative lighting values\n    //     // diffuseTerm = clamp(diffuseTerm, 0, 1);\n\n    // float ambientTerm = 0.1;\n\n    // float lightIntensity = diffuseTerm + ambientTerm;   //Add a small float value to the color multiplier\n    //                                                     //to simulate ambient lighting. This ensures that faces that are not\n    //                                                     //lit by our point light are not completely black.\n\n    // out_Col = vec4(diffuseTerm * 2.5 * albedo.rgb, 1.0);\n    out_Col = vec4(albedo.rgb, 1.0);\n\n\n    // accumColor = texture(u_Image1, vec2( x,  y));\n    // out_Col = vec4(albedo.rgb * height, 1.0);\n\n}\n"
 
 /***/ }),
 /* 76 */
@@ -16850,7 +17002,13 @@ module.exports = "#version 300 es\nprecision highp float;\n\nuniform vec3 u_Eye,
 /* 79 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\nprecision highp float;\n\nvec3 sunDirection = normalize(vec3(3.0, 2.5, -1.0));\nfloat invPi = 0.31830988618;\nin vec2 fs_Pos;\n\nuniform float u_Time;\nuniform vec2 u_Dimensions;\nout vec4 out_Col;\nuniform vec4 u_CameraPos;\nuniform sampler2D u_Image1; // Color image\n\n\nfloat random1( vec2 p , vec2 seed) {\n  return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);\n}\n\nfloat random1( vec3 p , vec3 seed) {\n  return fract(sin(dot(p + seed, vec3(987.654, 123.456, 531.975))) * 85734.3545);\n}\n\nvec2 random2( vec2 p , vec2 seed) {\n  return fract(sin(vec2(dot(p + seed, vec2(311.7, 127.1)), dot(p + seed, vec2(269.5, 183.3)))) * 85734.3545);\n}\n\nfloat interpNoise2d(float x, float y) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n\n  float v1 = random1(vec2(intX, intY), vec2(1.f, 1.f));\n  float v2 = random1(vec2(intX + 1.f, intY), vec2(1.f, 1.f));\n  float v3 = random1(vec2(intX, intY + 1.f), vec2(1.f, 1.f));\n  float v4 = random1(vec2(intX + 1.f, intY + 1.f), vec2(1.f, 1.f));\n\n  float i1 = mix(v1, v2, fractX);\n  float i2 = mix(v3, v4, fractX);\n  return mix(i1, i2, fractY);\n  return 2.0;\n\n}\n\nfloat interpNoise3d(float x, float y, float z) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n  float intZ = floor(z);\n  float fractZ = fract(z);\n\n  float v1 = random1(vec3(intX, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v2 = random1(vec3(intX, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v3 = random1(vec3(intX + 1.0, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v4 = random1(vec3(intX + 1.0, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v5 = random1(vec3(intX, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n  float v6 = random1(vec3(intX, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v7 = random1(vec3(intX + 1.0, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v8 = random1(vec3(intX + 1.0, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n\n  float i1 = smoothstep(0.0, 1.0, mix(v2, v3, fractX));\n  float i2 = smoothstep(0.0, 1.0, mix(v1, v4, fractX));\n  float i3 = smoothstep(0.0, 1.0, mix(v6, v7, fractX));\n  float i4 = smoothstep(0.0, 1.0, mix(v5, v8, fractX));\n\n  float j1 = smoothstep(0.0, 1.0, mix(i4, i3, fractZ));\n  float j2 = smoothstep(0.0, 1.0, mix(i2, i1, fractZ));\n\n  return smoothstep(0.0, 1.0, mix(j2, j1, fractY));\n\n\n\n}\n\nfloat computeWorley(float x, float y, float numRows, float numCols) {\n    float xPos = x * float(numCols) / 20.f;\n    float yPos = y * float(numRows) / 20.f;\n\n    float minDist = 60.f;\n    vec2 minVec = vec2(0.f, 0.f);\n\n    for (int i = -1; i < 2; i++) {\n        for (int j = -1; j < 2; j++) {\n            vec2 currGrid = vec2(floor(float(xPos)) + float(i), floor(float(yPos)) + float(j));\n            vec2 currNoise = currGrid + random2(currGrid, vec2(2.0, 1.0));\n            float currDist = distance(vec2(xPos, yPos), currNoise);\n            if (currDist <= minDist) {\n                minDist = currDist;\n                minVec = currNoise;\n            }\n        }\n    }\n    return minDist;\n    // return 2.0;\n}\n\nfloat fbmWorley(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += computeWorley( (x / xScale) * freq, (y / yScale) * freq, 2.0, 2.0) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm3D(float x, float y, float z, float height, float xScale, float yScale, float zScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 4;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}   \n\n// 3D Noise by IQ\nfloat Noise3D( in vec3 pos )\n{\n    vec3 p = floor(pos);\n    vec3 f = fract(pos);\n    f = f * f * (3.0 - 2.0 * f);\n    vec2 uv = (p.xy + vec2(37.0, 17.0) * p.z) + f.xy;\n    vec2 rg = random2((uv + 0.5) / 256.0, vec2(0.0, 1.0)).yx;\n    // textureLod( iChannel0, (uv + 0.5) / 256.0, 0.0).yx;\n    return -1.0 + 2.0 * mix( rg.x, rg.y, f.z );\n}\n\nfloat ComputeFBM( in vec3 pos )\n{\n    float amplitude = 0.25;\n    float sum = 0.0;\n    for(int i = 0; i < 3; i++)\n    {\n        sum += Noise3D(pos) * amplitude;\n        amplitude *= 0.2;\n        pos *= 4.0;\n    }\n    sum -= pos.y / 1200.0;\n    sum *= 8.0; // Probably need to tweak this if the raymarching steps/step size are changed\n    return clamp(sum, 0.0, 1.0);\n}\n\n// Henyey-Greenstein\nfloat Phase( in float g, in float theta )\n{\n    return 0.25 * invPi * (1.0 - g * g) / (1.0 + g * g - 2.0 * g * pow(theta, 1.5));\n}\n\nvec4 ShadeBackground( in vec3 rayDirection )\n{\n    vec4 color = vec4(0.0);\n    //vec3 sunDirection = normalize(vec3(cos(iTime), 2.0, sin(iTime)));\n    // Sun\n    // float sunDot = clamp(dot(sunDirection, rayDirection), 0.0, 1.0);\n    // vec3 sunColor = vec3(1.0, 0.58, 0.3) * 20.0;\n    // color += sunColor * pow(sunDot, 17.0);\n    \n    // Sky\n    vec4 skyColor = vec4(0.0);\n    color += skyColor;\n\n    float x = 0.5 * (fs_Pos.x + 1.0);\n    float y = 0.5 * (fs_Pos.y + 1.0);\n\n    vec4 textureColor = texture(u_Image1, vec2(x,  y));\n\n    \n    return textureColor;\n}\n\nvec4 RaymarchScene( in vec3 origin, in vec3 dir )\n{\n    // Volume properties\n    float scatteringCoeff = 0.5;\n    float t = 0.1;\n    float dt;\n    vec3 pos;\n    vec3 accumColor = vec3(0.0);\n    float transmittance = 1.0;\n    \n    for(int i = 0; i < 50; i++)\n    {\n        pos = origin + t * dir + vec3(0.0, 0.0, 0.0);\n        \n        float density = fbm3D(pos.x, pos.y- u_Time/8.0, pos.z , 0.7, 0.3, 0.3, 0.3);\n        float distFromCenter = clamp(pow(abs(length(pos - vec3(0.0, 0.0, 9.0))) * 2.0, 4.0), 0.0, 1.0);\n        density *= 1.0 - distFromCenter;\n        // density = 0.0;\n        transmittance *= exp(-scatteringCoeff * density * dt);\n        \n        // Evaluate incident lighting here\n        vec3 incidentLight = vec3(0.0);\n        \n        // Compute samples toward light source\n        const float numSamples = 1.0;\n        float stepSize = 0.1;\n        vec3 light = vec3(0.6, 0.6, 0.6) * 50.0;\n        float accumDensity = 0.0;\n        for(float j = 1.0; j <= numSamples; j += 1.0)\n        {\n            accumDensity += ComputeFBM(pos + stepSize * j * sunDirection) * stepSize;\n        }\n        accumDensity /= numSamples;\n        incidentLight = light * exp(-scatteringCoeff * accumDensity * stepSize);\n        \n        accumColor += scatteringCoeff * density * Phase(scatteringCoeff, abs(dot(dir, sunDirection))) * incidentLight * transmittance * dt;\n        \n        if (transmittance <= 0.01)\n        {\n            break;\n        }\n        \n        dt = max(0.04, 0.02 * t);\n        t += dt;\n    }\n    \n    // Shade the sky\n    vec4 backgroundColor = ShadeBackground(dir);\n    return vec4(transmittance * backgroundColor + vec4(accumColor, 1.0));\n}\n\nvec3 CastRay( in vec2 sp, in vec3 origin )\n{\n    // Compute local camera vectors\n    vec3 refPoint = origin + vec3(0.0, 0.0, -1.0);\n    vec3 camLook = normalize(refPoint - origin);\n    vec3 camRight = normalize(cross(camLook, vec3(0, 1, 0)));\n    vec3 camUp = normalize(cross(camRight, camLook));\n    \n    vec3 rayPoint = refPoint + sp.x * camRight + sp.y * camUp;\n    return normalize(rayPoint - origin);\n}\n\nvec3 ToneMap( in vec3 color )\n{\n    return 1.0 - exp(-2.0 * color);\n}\n\n// void main( out vec4 fragColor, in vec2 fragCoord )\nvoid main()\n{\n    float x = 0.5 * (fs_Pos.x + 1.0);\n    float y = 0.5 * (fs_Pos.y + 1.0);\n    vec2 screenPoint = (fs_Pos.xy);\n    \n    // Compute ray direction\n    vec3 rayOrigin = u_CameraPos.xyz;\n    vec3 rayDirection = CastRay(screenPoint, rayOrigin);\n    \n    // Raymarch the fbm\n    vec4 finalColor = RaymarchScene(rayOrigin, rayDirection);\n    \n    // out_Col = vec4(ToneMap(finalColor.xyz), 1.0);\n    out_Col = vec4(finalColor.rgb, 1.0);\n}"
+module.exports = "#version 300 es\nprecision highp float;\n\nvec3 sunDirection = normalize(vec3(3.0, 2.5, -1.0));\nfloat invPi = 0.31830988618;\nin vec2 fs_Pos;\n\nuniform float u_Time;\nuniform vec2 u_Dimensions;\nout vec4 out_Col;\nuniform vec4 u_CameraPos;\nuniform sampler2D u_Image1; // Full image\nuniform sampler2D u_Image2; // Depth image\n\nuniform mat4 u_Model;       // The matrix that defines the transformation of the\n                            // object we're rendering. In this assignment,\n                            // this will be the result of traversing your scene graph.\n\nuniform mat4 u_ModelInvTr;  // The inverse transpose of the model matrix.\n                            // This allows us to transform the object's normals properly\n                            // if the object has been non-uniformly scaled.\n\nuniform mat4 u_ViewProj;    // The matrix that defines the camera's transformation.\n                            // We've written a static matrix for you to use for HW2,\n                            // but in HW3 you'll have to generate one yourself\n\n\n\nfloat random1( vec2 p , vec2 seed) {\n  return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);\n}\n\nfloat random1( vec3 p , vec3 seed) {\n  return fract(sin(dot(p + seed, vec3(987.654, 123.456, 531.975))) * 85734.3545);\n}\n\nvec2 random2( vec2 p , vec2 seed) {\n  return fract(sin(vec2(dot(p + seed, vec2(311.7, 127.1)), dot(p + seed, vec2(269.5, 183.3)))) * 85734.3545);\n}\n\nfloat interpNoise2d(float x, float y) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n\n  float v1 = random1(vec2(intX, intY), vec2(1.f, 1.f));\n  float v2 = random1(vec2(intX + 1.f, intY), vec2(1.f, 1.f));\n  float v3 = random1(vec2(intX, intY + 1.f), vec2(1.f, 1.f));\n  float v4 = random1(vec2(intX + 1.f, intY + 1.f), vec2(1.f, 1.f));\n\n  float i1 = mix(v1, v2, fractX);\n  float i2 = mix(v3, v4, fractX);\n  return mix(i1, i2, fractY);\n  return 2.0;\n\n}\n\nfloat interpNoise3d(float x, float y, float z) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n  float intZ = floor(z);\n  float fractZ = fract(z);\n\n  float v1 = random1(vec3(intX, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v2 = random1(vec3(intX, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v3 = random1(vec3(intX + 1.0, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v4 = random1(vec3(intX + 1.0, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v5 = random1(vec3(intX, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n  float v6 = random1(vec3(intX, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v7 = random1(vec3(intX + 1.0, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v8 = random1(vec3(intX + 1.0, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n\n  float i1 = smoothstep(0.0, 1.0, mix(v2, v3, fractX));\n  float i2 = smoothstep(0.0, 1.0, mix(v1, v4, fractX));\n  float i3 = smoothstep(0.0, 1.0, mix(v6, v7, fractX));\n  float i4 = smoothstep(0.0, 1.0, mix(v5, v8, fractX));\n\n  float j1 = smoothstep(0.0, 1.0, mix(i4, i3, fractZ));\n  float j2 = smoothstep(0.0, 1.0, mix(i2, i1, fractZ));\n\n  return smoothstep(0.0, 1.0, mix(j2, j1, fractY));\n\n\n\n}\n\nfloat computeWorley(float x, float y, float numRows, float numCols) {\n    float xPos = x * float(numCols) / 20.f;\n    float yPos = y * float(numRows) / 20.f;\n\n    float minDist = 60.f;\n    vec2 minVec = vec2(0.f, 0.f);\n\n    for (int i = -1; i < 2; i++) {\n        for (int j = -1; j < 2; j++) {\n            vec2 currGrid = vec2(floor(float(xPos)) + float(i), floor(float(yPos)) + float(j));\n            vec2 currNoise = currGrid + random2(currGrid, vec2(2.0, 1.0));\n            float currDist = distance(vec2(xPos, yPos), currNoise);\n            if (currDist <= minDist) {\n                minDist = currDist;\n                minVec = currNoise;\n            }\n        }\n    }\n    return minDist;\n    // return 2.0;\n}\n\nfloat fbmWorley(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += computeWorley( (x / xScale) * freq, (y / yScale) * freq, 2.0, 2.0) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm3D(float x, float y, float z, float height, float xScale, float yScale, float zScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 2;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}   \n\n// 3D Noise by IQ\nfloat Noise3D( in vec3 pos )\n{\n    vec3 p = floor(pos);\n    vec3 f = fract(pos);\n    f = f * f * (3.0 - 2.0 * f);\n    vec2 uv = (p.xy + vec2(37.0, 17.0) * p.z) + f.xy;\n    vec2 rg = random2((uv + 0.5) / 256.0, vec2(0.0, 1.0)).yx;\n    // textureLod( iChannel0, (uv + 0.5) / 256.0, 0.0).yx;\n    return -1.0 + 2.0 * mix( rg.x, rg.y, f.z );\n}\n\nfloat ComputeFBM( in vec3 pos )\n{\n    float amplitude = 0.25;\n    float sum = 0.0;\n    for(int i = 0; i < 3; i++)\n    {\n        sum += Noise3D(pos) * amplitude;\n        amplitude *= 0.2;\n        pos *= 4.0;\n    }\n    sum -= pos.y / 1200.0;\n    sum *= 8.0; // Probably need to tweak this if the raymarching steps/step size are changed\n    return clamp(sum, 0.0, 1.0);\n}\n\n// Henyey-Greenstein\nfloat Phase( in float g, in float theta )\n{\n    return 0.25 * invPi * (1.0 - g * g) / (1.0 + g * g - 2.0 * g * pow(theta, 1.5));\n}\n\nvec4 ShadeBackground( in vec3 rayDirection )\n{\n    vec4 color = vec4(0.0);\n    //vec3 sunDirection = normalize(vec3(cos(iTime), 2.0, sin(iTime)));\n    // Sun\n    // float sunDot = clamp(dot(sunDirection, rayDirection), 0.0, 1.0);\n    // vec3 sunColor = vec3(1.0, 0.58, 0.3) * 20.0;\n    // color += sunColor * pow(sunDot, 17.0);\n    \n    // Sky\n    vec4 skyColor = vec4(0.0);\n    color += skyColor;\n\n    float x = 0.5 * (fs_Pos.x + 1.0);\n    float y = 0.5 * (fs_Pos.y + 1.0);\n\n    vec4 textureColor = texture(u_Image1, vec2(x,  y));\n\n    \n    return textureColor;\n}\n\nvec4 RaymarchScene( in vec3 origin, in vec3 dir )\n{\n    // Volume properties\n    float scatteringCoeff = 0.5;\n    float t = 0.1;\n    float dt;\n    vec3 pos;\n    vec3 accumColor = vec3(0.0);\n    float transmittance = 1.0;\n    \n    for(int i = 50; i < 180; i++)\n    {\n        pos = origin + t * dir + vec3(0.0, 0.0, 0.0);\n        \n        float density = fbm3D(pos.x + 0.4 * sin(u_Time / 2.0) + 0.5 * cos(u_Time/ 3.0 + 3.0), pos.y - u_Time/2.0, pos.z , 0.2, 0.5, 0.5, 0.5);\n\n        \n        vec4 modelposition = vec4(12.0, -20.0, -55.0, 1.0);   // Temporarily store the transformed vertex positions for use below\n        // vec4 viewspace = u_ViewProj * modelposition;\n\n        vec3 sprayPos = vec3(pos.x * 2.1, pos.y * 1.4, pos.z);\n        // float distFromCenter = clamp(pow(abs(length(pos - vec3(modelposition))) * 10.0, 4.0), 0.0, 1.0);\n        float dist = 15.0 + 5.0 * clamp(fbm3D(pos.x + sin(u_Time / 2.0 + 5.0) + cos(u_Time), pos.y - sin(u_Time/2.0 + 2.0), pos.z + cos(u_Time), 1.0, 5.0, 5.0, 5.0), 0.0, 1.0);\n        float distFromCenter = clamp(pow(length(sprayPos - vec3(modelposition)) / dist, 0.5), 0.0, 1.0);\n        density *= 1.0 - distFromCenter;\n\n        float x = 0.5 * (fs_Pos.x + 1.0);\n        float y = 0.5 * (fs_Pos.y + 1.0);\n        vec4 textureColor = texture(u_Image2, vec2(x,  y));\n        float depthVal = textureColor.r;\n        float posDepth = length(sprayPos - u_CameraPos.xyz) / 89.0;\n        // if (depthVal > 0.74) {\n        if (depthVal > posDepth || sprayPos.y < -28.0) {\n          density = 0.0;\n        }\n        // density *= 15.0 / distFromCenter;\n        density *= 8.0;\n\n\n        // if (distFromCenter > 10.0) {\n        //   density = 0.0;\n        // }\n        // density = 0.0;\n        transmittance *= exp(-scatteringCoeff * density * dt);\n        \n        // Evaluate incident lighting here\n        vec3 incidentLight = vec3(0.0);\n        \n        // Compute samples toward light source\n        const float numSamples = 1.0;\n        float stepSize = 0.1;\n        vec3 light = vec3(0.6, 0.6, 0.6) * 50.0;\n        float accumDensity = 0.0;\n        for(float j = 1.0; j <= numSamples; j += 1.0)\n        {\n            accumDensity += ComputeFBM(pos + stepSize * j * sunDirection) * stepSize;\n        }\n        accumDensity /= numSamples;\n        incidentLight = light * exp(-scatteringCoeff * accumDensity * stepSize);\n        \n        accumColor += scatteringCoeff * density * Phase(scatteringCoeff, abs(dot(dir, sunDirection))) * incidentLight * transmittance * dt;\n        \n        if (transmittance <= 0.01)\n        {\n            break;\n        }\n        \n        dt = max(0.04, 0.04 * t);\n        t += dt;\n    }\n    \n    // Shade the sky\n    vec4 backgroundColor = ShadeBackground(dir);\n    return vec4(transmittance * backgroundColor + vec4(accumColor, 1.0));\n}\n\nvec3 CastRay( in vec2 sp, in vec3 origin )\n{\n    // Compute local camera vectors\n    vec3 refPoint = origin + vec3(0.0, 0.0, -1.0);\n    vec3 camLook = normalize(refPoint - origin);\n    vec3 camRight = normalize(cross(camLook, vec3(0, 1, 0)));\n    vec3 camUp = normalize(cross(camRight, camLook));\n    \n    vec3 rayPoint = refPoint + sp.x * camRight + sp.y * camUp;\n    return normalize(rayPoint - origin);\n}\n\nvec3 ToneMap( in vec3 color )\n{\n    return 1.0 - exp(-2.0 * color);\n}\n\n// void main( out vec4 fragColor, in vec2 fragCoord )\nvoid main()\n{\n    float x = 0.5 * (fs_Pos.x + 1.0);\n    float y = 0.5 * (fs_Pos.y + 1.0);\n    vec2 screenPoint = (fs_Pos.xy);\n    \n    // Compute ray direction\n    vec3 rayOrigin = u_CameraPos.xyz;\n    vec3 rayDirection = CastRay(screenPoint, rayOrigin);\n    \n    // Raymarch the fbm\n    vec4 finalColor = RaymarchScene(rayOrigin, rayDirection);\n    \n    // out_Col = vec4(ToneMap(finalColor.xyz), 1.0);\n    out_Col = vec4(finalColor.rgb, 1.0);\n}"
+
+/***/ }),
+/* 80 */
+/***/ (function(module, exports) {
+
+module.exports = "#version 300 es\nprecision highp float;\n\nvec3 sunDirection = normalize(vec3(1.0, 0.0, -1.0));\nfloat invPi = 0.31830988618;\nin vec2 fs_Pos;\n\nuniform float u_Time;\nuniform vec2 u_Dimensions;\nout vec4 out_Col;\nuniform vec4 u_CameraPos;\nuniform sampler2D u_Image1; // Full image\nuniform sampler2D u_Image2; // Depth image\n\nuniform mat4 u_Model;       // The matrix that defines the transformation of the\n                            // object we're rendering. In this assignment,\n                            // this will be the result of traversing your scene graph.\n\nuniform mat4 u_ModelInvTr;  // The inverse transpose of the model matrix.\n                            // This allows us to transform the object's normals properly\n                            // if the object has been non-uniformly scaled.\n\nuniform mat4 u_ViewProj;    // The matrix that defines the camera's transformation.\n                            // We've written a static matrix for you to use for HW2,\n                            // but in HW3 you'll have to generate one yourself\n\n\n\nfloat random1( vec2 p , vec2 seed) {\n  return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);\n}\n\nfloat random1( vec3 p , vec3 seed) {\n  return fract(sin(dot(p + seed, vec3(987.654, 123.456, 531.975))) * 85734.3545);\n}\n\nvec2 random2( vec2 p , vec2 seed) {\n  return fract(sin(vec2(dot(p + seed, vec2(311.7, 127.1)), dot(p + seed, vec2(269.5, 183.3)))) * 85734.3545);\n}\n\nfloat interpNoise2d(float x, float y) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n\n  float v1 = random1(vec2(intX, intY), vec2(1.f, 1.f));\n  float v2 = random1(vec2(intX + 1.f, intY), vec2(1.f, 1.f));\n  float v3 = random1(vec2(intX, intY + 1.f), vec2(1.f, 1.f));\n  float v4 = random1(vec2(intX + 1.f, intY + 1.f), vec2(1.f, 1.f));\n\n  float i1 = mix(v1, v2, fractX);\n  float i2 = mix(v3, v4, fractX);\n  return mix(i1, i2, fractY);\n  return 2.0;\n\n}\n\nfloat interpNoise3d(float x, float y, float z) {\n  float intX = floor(x);\n  float fractX = fract(x);\n  float intY = floor(y);\n  float fractY = fract(y);\n  float intZ = floor(z);\n  float fractZ = fract(z);\n\n  float v1 = random1(vec3(intX, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v2 = random1(vec3(intX, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v3 = random1(vec3(intX + 1.0, intY, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v4 = random1(vec3(intX + 1.0, intY, intZ), vec3(1.f, 1.f, 1.f));\n  float v5 = random1(vec3(intX, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n  float v6 = random1(vec3(intX, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v7 = random1(vec3(intX + 1.0, intY + 1.0, intZ + 1.0), vec3(1.f, 1.f, 1.f));\n  float v8 = random1(vec3(intX + 1.0, intY + 1.0, intZ), vec3(1.f, 1.f, 1.f));\n\n  float i1 = smoothstep(0.0, 1.0, mix(v2, v3, fractX));\n  float i2 = smoothstep(0.0, 1.0, mix(v1, v4, fractX));\n  float i3 = smoothstep(0.0, 1.0, mix(v6, v7, fractX));\n  float i4 = smoothstep(0.0, 1.0, mix(v5, v8, fractX));\n\n  float j1 = smoothstep(0.0, 1.0, mix(i4, i3, fractZ));\n  float j2 = smoothstep(0.0, 1.0, mix(i2, i1, fractZ));\n\n  return smoothstep(0.0, 1.0, mix(j2, j1, fractY));\n\n\n\n}\n\nfloat computeWorley(float x, float y, float numRows, float numCols) {\n    float xPos = x * float(numCols) / 20.f;\n    float yPos = y * float(numRows) / 20.f;\n\n    float minDist = 60.f;\n    vec2 minVec = vec2(0.f, 0.f);\n\n    for (int i = -1; i < 2; i++) {\n        for (int j = -1; j < 2; j++) {\n            vec2 currGrid = vec2(floor(float(xPos)) + float(i), floor(float(yPos)) + float(j));\n            vec2 currNoise = currGrid + random2(currGrid, vec2(2.0, 1.0));\n            float currDist = distance(vec2(xPos, yPos), currNoise);\n            if (currDist <= minDist) {\n                minDist = currDist;\n                minVec = currNoise;\n            }\n        }\n    }\n    return minDist;\n    // return 2.0;\n}\n\nfloat fbmWorley(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += computeWorley( (x / xScale) * freq, (y / yScale) * freq, 2.0, 2.0) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm(float x, float y, float height, float xScale, float yScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 8;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}\n\nfloat fbm3D(float x, float y, float z, float height, float xScale, float yScale, float zScale) {\n  float total = 0.f;\n  float persistence = 0.5f;\n  int octaves = 4;\n  float freq = 2.0;\n  float amp = 1.0;\n  for (int i = 0; i < octaves; i++) {\n    // total += interpNoise2d( (x / xScale) * freq, (y / yScale) * freq) * amp;\n    total += interpNoise3d( (x / xScale) * freq, (y / yScale) * freq, (z / zScale) * freq) * amp;\n    freq *= 2.0;\n    amp *= persistence;\n  }\n  return height * total;\n}   \n\n// 3D Noise by IQ\nfloat Noise3D( in vec3 pos )\n{\n    vec3 p = floor(pos);\n    vec3 f = fract(pos);\n    f = f * f * (3.0 - 2.0 * f);\n    vec2 uv = (p.xy + vec2(37.0, 17.0) * p.z) + f.xy;\n    vec2 rg = random2((uv + 0.5) / 256.0, vec2(0.0, 1.0)).yx;\n    // textureLod( iChannel0, (uv + 0.5) / 256.0, 0.0).yx;\n    return -1.0 + 2.0 * mix( rg.x, rg.y, f.z );\n}\n\nfloat ComputeFBM( in vec3 pos )\n{\n    float amplitude = 0.25;\n    float sum = 0.0;\n    for(int i = 0; i < 3; i++)\n    {\n        sum += Noise3D(pos) * amplitude;\n        amplitude *= 0.2;\n        pos *= 4.0;\n    }\n    sum -= pos.y / 1200.0;\n    sum *= 8.0; // Probably need to tweak this if the raymarching steps/step size are changed\n    return clamp(sum, 0.0, 1.0);\n}\n\n// Henyey-Greenstein\nfloat Phase( in float g, in float theta )\n{\n    return 0.25 * invPi * (1.0 - g * g) / (1.0 + g * g - 2.0 * g * pow(theta, 1.5));\n}\n\nvec4 ShadeBackground( in vec3 rayDirection )\n{\n    vec4 color = vec4(0.0);\n    //vec3 sunDirection = normalize(vec3(cos(iTime), 2.0, sin(iTime)));\n    // Sun\n    // float sunDot = clamp(dot(sunDirection, rayDirection), 0.0, 1.0);\n    // vec3 sunColor = vec3(1.0, 0.58, 0.3) * 20.0;\n    // color += sunColor * pow(sunDot, 17.0);\n    \n    // Sky\n    vec4 skyColor = vec4(0.0);\n    color += skyColor;\n\n    float x = 0.5 * (fs_Pos.x + 1.0);\n    float y = 0.5 * (fs_Pos.y + 1.0);\n\n    vec4 textureColor = texture(u_Image1, vec2(x,  y));\n\n    \n    return textureColor;\n}\n\nvec4 RaymarchScene( in vec3 origin, in vec3 dir )\n{\n    // Volume properties\n    float scatteringCoeff = 0.5;\n    float t = 0.1;\n    float dt;\n    vec3 pos;\n    vec3 accumColor = vec3(0.0);\n    float transmittance = 1.0;\n    \n    for(int i = 50; i < 180; i++)\n    {\n        pos = origin + t * dir + vec3(0.0, 0.0, 0.0);\n        float x = 0.5 * (fs_Pos.x + 1.0);\n        float y = 0.5 * (fs_Pos.y + 1.0);\n        float density = 0.4 * pow(12.0 * fbm3D(pos.x - u_Time/20.0, pos.y, pos.z - u_Time/20.0, 0.05, 3.0, 3.0, 3.0), 2.0) * y;\n        if (density < 0.3) {\n          density = 0.0;\n        }\n\n        \n        // vec4 modelposition = vec4(12.0, -20.0, -55.0, 1.0);   // Temporarily store the transformed vertex positions for use below\n        // // vec4 viewspace = u_ViewProj * modelposition;\n\n        // vec3 sprayPos = vec3(pos.x * 2.1, pos.y * 1.4, pos.z);\n        // // float distFromCenter = clamp(pow(abs(length(pos - vec3(modelposition))) * 10.0, 4.0), 0.0, 1.0);\n        // float dist = 15.0 + 5.0 * clamp(fbm3D(pos.x + sin(u_Time / 2.0 + 5.0) + cos(u_Time), pos.y - sin(u_Time/2.0 + 2.0), pos.z + cos(u_Time), 1.0, 5.0, 5.0, 5.0), 0.0, 1.0);\n        // float distFromCenter = clamp(pow(length(sprayPos - vec3(modelposition)) / dist, 0.5), 0.0, 1.0);\n        // density *= 1.0 - distFromCenter;\n\n        // float x = 0.5 * (fs_Pos.x + 1.0);\n        // float y = 0.5 * (fs_Pos.y + 1.0);\n        // vec4 textureColor = texture(u_Image2, vec2(x,  y));\n        // float depthVal = textureColor.r;\n        // float posDepth = length(sprayPos - u_CameraPos.xyz) / 89.0;\n        // // if (depthVal > 0.74) {\n        // if (depthVal > posDepth || sprayPos.y < -28.0) {\n        //   density = 0.0;\n        // }\n        // // density *= 15.0 / distFromCenter;\n        // density *= 8.0;\n\n\n        // if (distFromCenter > 10.0) {\n        //   density = 0.0;\n        // }\n        // density = 0.0;\n        transmittance *= exp(-scatteringCoeff * density * dt);\n        \n        // Evaluate incident lighting here\n        vec3 incidentLight = vec3(0.0);\n        \n        // Compute samples toward light source\n        const float numSamples = 1.0;\n        float stepSize = 0.1;\n        vec3 light = vec3(0.7, 0.5, 0.5) * 30.0;\n        float accumDensity = 0.0;\n        for(float j = 1.0; j <= numSamples; j += 1.0)\n        {\n            accumDensity += ComputeFBM(pos + stepSize * j * sunDirection) * stepSize;\n        }\n        accumDensity /= numSamples;\n        incidentLight = light * exp(-scatteringCoeff * accumDensity * stepSize);\n        \n        accumColor += scatteringCoeff * density * Phase(scatteringCoeff, abs(dot(dir, sunDirection))) * incidentLight * transmittance * dt;\n        \n        if (transmittance <= 0.01)\n        {\n            break;\n        }\n        \n        dt = max(0.04, 0.02 * t);\n        t += dt;\n    }\n    \n    // Shade the sky\n    vec4 backgroundColor = ShadeBackground(dir);\n    return vec4(transmittance * backgroundColor + vec4(accumColor, 1.0));\n}\n\nvec3 CastRay( in vec2 sp, in vec3 origin )\n{\n    // Compute local camera vectors\n    vec3 refPoint = origin + vec3(0.0, 0.0, -1.0);\n    vec3 camLook = normalize(refPoint - origin);\n    vec3 camRight = normalize(cross(camLook, vec3(0, 1, 0)));\n    vec3 camUp = normalize(cross(camRight, camLook));\n    \n    vec3 rayPoint = refPoint + sp.x * camRight + sp.y * camUp;\n    return normalize(rayPoint - origin);\n}\n\nvec3 ToneMap( in vec3 color )\n{\n    return 1.0 - exp(-2.0 * color);\n}\n\n// void main( out vec4 fragColor, in vec2 fragCoord )\nvoid main()\n{\n    float x = 0.5 * (fs_Pos.x + 1.0);\n    float y = 0.5 * (fs_Pos.y + 1.0);\n    vec2 screenPoint = (fs_Pos.xy);\n    \n    // Compute ray direction\n    vec3 rayOrigin = u_CameraPos.xyz;\n    vec3 rayDirection = CastRay(screenPoint, rayOrigin);\n    \n    // Raymarch the fbm\n    vec4 finalColor = RaymarchScene(rayOrigin, rayDirection);\n    \n    // out_Col = vec4(ToneMap(finalColor.xyz), 1.0);\n    out_Col = vec4(finalColor.rgb, 1.0);\n}"
 
 /***/ })
 /******/ ]);
