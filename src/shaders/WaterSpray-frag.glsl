@@ -226,7 +226,7 @@ vec4 RaymarchScene( in vec3 origin, in vec3 dir )
         float density = fbm3D(pos.x + 0.4 * sin(u_Time / 2.0) + 0.5 * cos(u_Time/ 3.0 + 3.0), pos.y - u_Time/2.0, pos.z , 0.2, 0.5, 0.5, 0.5);
 
         
-        vec4 modelposition = vec4(12.0, -20.0, -55.0, 1.0);   // Temporarily store the transformed vertex positions for use below
+        vec4 modelposition = vec4(8.0, -20.0, -55.0, 1.0);   // Temporarily store the transformed vertex positions for use below
         // vec4 viewspace = u_ViewProj * modelposition;
 
         vec3 sprayPos = vec3(pos.x * 2.1, pos.y * 1.4, pos.z);

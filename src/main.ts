@@ -29,7 +29,7 @@ let fence: Mesh;
 let grass: Mesh;
 
 
-let sceneVersion = 1;
+let sceneVersion = 0;
 
 let ColorImage: WebGLTexture;
 let zBufferImage: WebGLTexture;
