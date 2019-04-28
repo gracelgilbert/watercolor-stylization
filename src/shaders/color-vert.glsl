@@ -23,6 +23,11 @@ uniform vec4 u_CameraPos;
 uniform float u_BleedScale;
 uniform float u_IsWater;
 uniform float u_Time;
+uniform float u_TremorFreq;
+uniform float u_TremorInt;
+uniform float u_BleedFreq;
+uniform float u_BleedInt;
+uniform float u_Style;
 
 in vec4 vs_Pos;             // The array of vertex positions passed to the shader
 
@@ -213,19 +218,24 @@ void main()
 
     float a = 1.0;
     edgeValue = pow(clamp((1.0 - a * (dot(normalize(u_CameraPos - fs_Pos), normalize(fs_Nor)))), 0.0, 1.0), 5.0);
-    vec4 offset = 0.03 * (sin(vs_Pos * 10.0) + sin((vs_Pos * 10.0) + 30.0)) * edgeValue;
-    offset = vec4(0.0);
-
-    bleedAmount = clamp(pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.8, 2.0, 2.0, 2.0), 13.0), 0.0, 1.0);
-        // bleedAmount = 0.0;
+    vec4 offset = 0.03 * u_TremorInt * (sin(vs_Pos * 10.0 * u_TremorFreq) + sin((vs_Pos * 10.0 * u_TremorFreq) + 30.0)) * edgeValue;
+    if (u_Style > 0.5) {
+      offset = 0.2 * u_TremorInt * (sin(vs_Pos * 10.0 * u_TremorFreq) + sin((vs_Pos * 10.0 * u_TremorFreq) + 30.0)) * edgeValue;
+    }
+    // offset = vec4(0.0);
+    if (u_BleedFreq == 0.0) {
+      bleedAmount = 0.0;
+    } else {
+      bleedAmount = clamp(u_BleedInt * pow(fbm3D(fs_Pos.x, -fs_Pos.y, fs_Pos.z, 0.8, 2.0 / u_BleedFreq, 2.0 / u_BleedFreq, 2.0 / u_BleedFreq), 13.0), 0.0, 1.0);
+    }
 
     offset += u_BleedScale * bleedAmount * fs_Nor;
     if (u_IsWater > 0.5 && u_IsWater < 1.5) {
-      offset += fs_Nor * fbm3D(fs_Pos.x, fs_Pos.y + u_Time/3.0, fs_Pos.z, 0.1, 0.2, 1.5, 0.2) * (abs(fs_Nor.z) + abs(fs_Nor.x));
+      offset += fs_Nor * fbm3D(fs_Pos.x, fs_Pos.y + u_Time/6.0, fs_Pos.z, 0.1, 0.2, 1.5, 0.2) * (abs(fs_Nor.z) + abs(fs_Nor.x));
     } 
     if (u_IsWater > 1.5) {
       fs_Pos = fs_Pos - vec4(-3.0, 2.1, 2.0, 0.0);
-      fs_Pos = rotationMatrix(vec3(0.0, 0.0, 1.0), u_Time / 4.0) * fs_Pos;
+      fs_Pos = rotationMatrix(vec3(0.0, 0.0, 1.0), u_Time / 30.0) * fs_Pos;
       fs_Pos = fs_Pos + vec4(-3.0, 2.1, 2.0, 0.0);
     }
 

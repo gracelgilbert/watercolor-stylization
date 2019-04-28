@@ -224,7 +224,7 @@ vec4 RaymarchScene( in vec3 origin, in vec3 dir )
         pos = origin + t * dir + vec3(0.0, 0.0, 0.0);
         float x = 0.5 * (fs_Pos.x + 1.0);
         float y = 0.5 * (fs_Pos.y + 1.0);
-        float density = 0.4 * pow(12.0 * fbm3D(pos.x - u_Time/20.0, pos.y, pos.z - u_Time/20.0, 0.05, 3.0, 3.0, 3.0), 2.0) * y;
+        float density = 0.4 * pow(12.0 * fbm3D(pos.x - u_Time/150.0, pos.y, pos.z - u_Time/150.0, 0.05, 3.0, 3.0, 3.0), 2.0) * y;
         if (density < 0.3) {
           density = 0.0;
         }

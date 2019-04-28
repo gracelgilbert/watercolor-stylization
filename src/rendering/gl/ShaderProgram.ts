@@ -40,6 +40,12 @@ class ShaderProgram {
   unifBleedScale: WebGLUniformLocation;
   unifGeomID: WebGLUniformLocation;
   unifIsWater: WebGLUniformLocation;
+  unifTremorFreq: WebGLUniformLocation;
+  unifTremorInt: WebGLUniformLocation;
+  unifBleedFreq: WebGLUniformLocation;
+  unifBleedInt: WebGLUniformLocation;
+  unifStyle: WebGLUniformLocation;
+  unifPaperColor: WebGLUniformLocation;
 
 
   constructor(shaders: Array<Shader>) {
@@ -53,9 +59,9 @@ class ShaderProgram {
       throw gl.getProgramInfoLog(this.prog);
     }
 
-    this.attrPos = gl.getAttribLocation(this.prog, "vs_Pos");
-    this.attrNor = gl.getAttribLocation(this.prog, "vs_Nor");
-    this.attrCol = gl.getAttribLocation(this.prog, "vs_Col");
+    this.attrPos        = gl.getAttribLocation(this.prog, "vs_Pos");
+    this.attrNor        = gl.getAttribLocation(this.prog, "vs_Nor");
+    this.attrCol        = gl.getAttribLocation(this.prog, "vs_Col");
     this.unifModel      = gl.getUniformLocation(this.prog, "u_Model");
     this.unifModelInvTr = gl.getUniformLocation(this.prog, "u_ModelInvTr");
     this.unifViewProj   = gl.getUniformLocation(this.prog, "u_ViewProj");
@@ -66,12 +72,23 @@ class ShaderProgram {
     this.unifImage1     = gl.getUniformLocation(this.prog, "u_Image1");
     this.unifImage2     = gl.getUniformLocation(this.prog, "u_Image2");
     this.unifImage3     = gl.getUniformLocation(this.prog, "u_Image3");
-    this.unifImage4    = gl.getUniformLocation(this.prog, "u_Image4");
+    this.unifImage4     = gl.getUniformLocation(this.prog, "u_Image4");
 
     this.unifDimensions = gl.getUniformLocation(this.prog, "u_Dimensions");
     this.unifBleedScale = gl.getUniformLocation(this.prog, "u_BleedScale");
     this.unifGeomID     = gl.getUniformLocation(this.prog, "u_GeomID");
     this.unifIsWater    = gl.getUniformLocation(this.prog, "u_IsWater");
+
+    this.unifTremorFreq = gl.getUniformLocation(this.prog, "u_TremorFreq");
+    this.unifTremorInt  = gl.getUniformLocation(this.prog, "u_TremorInt");
+    this.unifBleedFreq  = gl.getUniformLocation(this.prog, "u_BleedFreq");
+    this.unifBleedInt   = gl.getUniformLocation(this.prog, "u_BleedInt");
+
+    this.unifStyle      = gl.getUniformLocation(this.prog, "u_Style");
+    this.unifPaperColor = gl.getUniformLocation(this.prog, "u_PaperCol");
+
+
+
   }
 
   use() {
@@ -96,6 +113,43 @@ class ShaderProgram {
     if(this.unifBleedScale != -1)
     {
       gl.uniform1f(this.unifBleedScale, bleed);
+    }
+  }
+
+  setStyle(s: number) {
+    this.use();
+
+    if(this.unifStyle != -1)
+    {
+      gl.uniform1f(this.unifStyle, s);
+    }
+  }
+
+  setTremor(freq: number, int: number) {
+    this.use();
+
+    if(this.unifTremorFreq != -1)
+    {
+      gl.uniform1f(this.unifTremorFreq, freq);
+    }
+
+    if(this.unifTremorInt != -1)
+    {
+      gl.uniform1f(this.unifTremorInt, int);
+    }
+  }
+
+  setBleedVals(freq: number, int: number) {
+    this.use();
+
+    if(this.unifBleedFreq != -1)
+    {
+      gl.uniform1f(this.unifBleedFreq, freq);
+    }
+
+    if(this.unifBleedInt != -1)
+    {
+      gl.uniform1f(this.unifBleedInt, int);
     }
   }
 
@@ -185,6 +239,14 @@ class ShaderProgram {
     this.use();
     if (this.unifColor !== -1) {
       gl.uniform4fv(this.unifColor, color);
+    }
+  }
+
+
+  setPaperColor(color: vec4) {
+    this.use();
+    if (this.unifPaperColor !== -1) {
+      gl.uniform4fv(this.unifPaperColor, color);
     }
   }
 

@@ -223,16 +223,16 @@ vec4 RaymarchScene( in vec3 origin, in vec3 dir )
     {
         pos = origin + t * dir + vec3(0.0, 0.0, 0.0);
         
-        float density = fbm3D(pos.x + 0.4 * sin(u_Time / 2.0) + 0.5 * cos(u_Time/ 3.0 + 3.0), pos.y - u_Time/2.0, pos.z , 0.2, 0.5, 0.5, 0.5);
+        float density = fbm3D(pos.x + 0.4 * sin(u_Time / 25.0) + 0.5 * cos(u_Time/ 18.0 + 3.0), pos.y - u_Time/5.5, pos.z , 0.2, 0.6, 0.6, 0.6);
 
         
-        vec4 modelposition = vec4(8.0, -20.0, -55.0, 1.0);   // Temporarily store the transformed vertex positions for use below
+        vec4 modelposition = vec4(10.0, -20.0, -55.0, 1.0);   // Temporarily store the transformed vertex positions for use below
         // vec4 viewspace = u_ViewProj * modelposition;
 
-        vec3 sprayPos = vec3(pos.x * 2.1, pos.y * 1.4, pos.z);
+        vec3 sprayPos = vec3(pos.x * 1.4, pos.y * 1.4, pos.z);
         // float distFromCenter = clamp(pow(abs(length(pos - vec3(modelposition))) * 10.0, 4.0), 0.0, 1.0);
-        float dist = 15.0 + 5.0 * clamp(fbm3D(pos.x + sin(u_Time / 2.0 + 5.0) + cos(u_Time), pos.y - sin(u_Time/2.0 + 2.0), pos.z + cos(u_Time), 1.0, 5.0, 5.0, 5.0), 0.0, 1.0);
-        float distFromCenter = clamp(pow(length(sprayPos - vec3(modelposition)) / dist, 0.5), 0.0, 1.0);
+        float dist = 15.0 + 5.0 * clamp(fbm3D(pos.x + sin(u_Time / 13.0 + 5.0) + cos(u_Time/15.0), pos.y - sin(u_Time/10.0 + 2.0), pos.z + cos(u_Time/10.0), 1.0, 5.0, 5.0, 5.0), 0.0, 1.0);
+        float distFromCenter = clamp(pow(length(sprayPos - vec3(modelposition)) / dist, 0.3), 0.0, 1.0);
         density *= 1.0 - distFromCenter;
 
         float x = 0.5 * (fs_Pos.x + 1.0);

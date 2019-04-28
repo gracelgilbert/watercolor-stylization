@@ -14,6 +14,21 @@ import Mesh from './geometry/Mesh';
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
+  scene: 0,
+  style: 0,
+  rockBleed: 0.2,
+  waterBleed: 0.2,
+  bushBleed: 0.02,
+  millBleed: 0.2,
+  roofBleed: 0.2,
+  spinBleed: 0.2,
+  grassBleed: 0.2,
+  fenceBleed: 0.1,
+  handTremorFrequency: 1.0,
+  handTremorIntensity: 1.0,
+  bleedFrequency: 1.0,
+  bleedIntensity: 1.0,
+  paperColor: "#fffcf2"
 };
 
 // let sphere: Mesh;
@@ -30,6 +45,22 @@ let grass: Mesh;
 
 
 let sceneVersion = 0;
+let sceneStyle = 0;
+
+// object ID values
+let waterID = 0.1;
+let rockID = 0.5;
+let bushLightID = 0.7;
+let bushDarkID = 0.9;
+
+let millID = 0.1;
+let roofID = 0.2;
+let spinID = 0.3;
+let grassID = 0.4;
+let fenceID = 0.5;
+
+
+
 
 let ColorImage: WebGLTexture;
 let zBufferImage: WebGLTexture;
@@ -103,6 +134,15 @@ function loadScene() {
 
 }
 
+function hexToRgb(hex: string) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+  } : null;
+}
+
 function main() {
   // Initial display for framerate
   const stats = Stats();
@@ -112,19 +152,27 @@ function main() {
   stats.domElement.style.top = '0px';
   document.body.appendChild(stats.domElement);
 
-
-
-
-
   // Add controls to the gui
   const gui = new DAT.GUI();
+  gui.add(controls, 'scene', {Waterfall: 0, Windmill: 1});
+  gui.add(controls, 'style', {Watercolor: 0, Cubism: 1});
+  gui.addColor(controls, 'paperColor');
+  gui.add(controls, 'waterBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'rockBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'bushBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'millBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'roofBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'spinBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'fenceBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'grassBleed', 0.0, 1.0).step(0.05);
+  gui.add(controls, 'handTremorFrequency', 0.0, 2.0).step(0.1);
+  gui.add(controls, 'handTremorIntensity', 0.0, 2.0).step(0.1);
+  gui.add(controls, 'bleedFrequency', 0.0, 2.0).step(0.1);
+  gui.add(controls, 'bleedIntensity', 0.0, 2.0).step(0.1);
 
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
-  // canvas.addEventListener("webglcontextlost", function(event) {
-  //     event.preventDefault();
-  // }, false);
 
   const gl = <WebGL2RenderingContext> canvas.getContext('webgl2');
   if (!gl) {
@@ -134,19 +182,14 @@ function main() {
   // Later, we can import `gl` from `globals.ts` to access it
   setGL(gl);
 
-
   screenQuad = new ScreenQuad();
   screenQuad.create();
-
 
   const camera = new Camera(vec3.fromValues(10, 10, 10), vec3.fromValues(0, 0, 0));
 
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
   gl.enable(gl.DEPTH_TEST);
-
-  // gl.enable(gl.BLEND);
-  // gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
 
   // Create shaderPrograms:
   const color = new ShaderProgram([
@@ -228,7 +271,8 @@ function main() {
     rbPaper = gl.createRenderbuffer();
     rbStyle = gl.createRenderbuffer();
   }
-
+  
+  // Instantiate textures, fbs, rbs
   createTextures();
   createFrameBuffers();
   createRenderbuffers();
@@ -264,9 +308,17 @@ function main() {
     camera.update();
     stats.begin();
 
-    // Instantiate textures, fbs, rbs
+    if (sceneVersion != controls.scene) {
+      sceneVersion = controls.scene;
+      loadScene();
+      if (sceneVersion == 0) {
+        controls.paperColor = "#fffcf2"; 
+      } else {
+        controls.paperColor = "#cddbf2";
+      }
+    }
 
-    
+
     /*
     PAPER TEXTURE
     */
@@ -306,27 +358,46 @@ function main() {
     spray.setTime(time);
     clouds.setTime(time);
 
+    color.setTremor(controls.handTremorFrequency, controls.handTremorIntensity);
+    depth.setTremor(controls.handTremorFrequency, controls.handTremorIntensity);
+    control.setTremor(controls.handTremorFrequency, controls.handTremorIntensity);
+
+    color.setBleedVals(controls.bleedFrequency, controls.bleedIntensity);
+    depth.setBleedVals(controls.bleedFrequency, controls.bleedIntensity);
+    control.setBleedVals(controls.bleedFrequency, controls.bleedIntensity);
+
+    color.setStyle(controls.style);
+    depth.setStyle(controls.style);
+    control.setStyle(controls.style);
+
     spray.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
     // spray.setViewProjMatrix(camera.projectionMatrix);
     time++;
 
     // Render 3D Scene with Color:
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(controls.paperColor);
+      let r: number = parseInt(result[1], 16);
+      let g: number = parseInt(result[2], 16);
+      let b: number = parseInt(result[3], 16);
+    let paperColor = vec4.fromValues(r/255, g/255, b/255, 1.0);
 
     if (sceneVersion == 0) {
-      renderer.render(camera, vec4.fromValues(1.0, 0.99, 0.95, 1.0), paper, [screenQuad]);
-      color.setBleed(0.2);
-      color.setID(0.0);
+      color.setPaperColor(paperColor);
+      renderer.render(camera, paperColor, paper, [screenQuad]);
+      color.setBleed(controls.waterBleed);
+      color.setID(waterID);
       color.setWater(1.0);
       renderer.render(camera, vec4.fromValues(0.517, 0.796, 1.0, 1.0), color, [water]);
-      color.setBleed(0.2);
-      color.setID(0.5);
+
+      color.setBleed(controls.rockBleed);
+      color.setID(rockID);
       color.setWater(0.0);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 3.0 * 0.064,3.0 * 0.046, 1.0), color, [rock]);
-      color.setBleed(0.02);
-      color.setID(0.7);
+
+      color.setBleed(controls.bushBleed);
+      color.setID(bushDarkID);
       renderer.render(camera, vec4.fromValues(1.0 * 0.087, 3.0 * 0.064,1.0 * 0.046, 1.0), color, [darkBush]);
-      color.setBleed(0.02);
-      color.setID(0.9);
+      color.setID(bushLightID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), color, [lightBush]);
   
   
@@ -346,17 +417,20 @@ function main() {
       depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
   
       // Render 3D scene with Depth:
-      depth.setBleed(0.2);
+      depth.setBleed(controls.waterBleed);
       depth.setWater(1.0);
+      depth.setID(waterID);
       renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [water]);
-      depth.setBleed(0.2);
+
+      depth.setBleed(controls.rockBleed);
       depth.setWater(0.0);
+      depth.setID(rockID);
       renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [rock]);
-      depth.setBleed(0.02);
-      depth.setID(0.7);
-      renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [darkBush]);
-      depth.setBleed(0.02);
-      depth.setID(0.9);
+
+      depth.setBleed(controls.bushBleed);
+      depth.setID(bushDarkID);
+      renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [darkBush]);;
+      depth.setID(bushLightID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [lightBush]);
       /*
       THIRD PASS: CONTROLS
@@ -372,44 +446,43 @@ function main() {
       fbrbSetup(ControlImage, fbControl, rbControl);
   
       // Render 3D scene with Control:
-      control.setBleed(0.2);
-      control.setID(0.0);
       control.setViewProjMatrix(camera.projectionMatrix);
       control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
-  
+
+      control.setBleed(controls.waterBleed);
+      control.setID(waterID);
       control.setWater(1.0);
       renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [water]);
-      control.setBleed(0.2);
-      control.setID(0.5);
+      control.setBleed(controls.rockBleed);
+      control.setID(rockID);
       control.setWater(0.0);
       renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [rock]);
-      control.setBleed(0.02);
-      control.setID(0.7);
+      control.setBleed(controls.bushBleed);
+      control.setID(bushDarkID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [darkBush]);
-      control.setBleed(0.02);
-      control.setID(0.9);
+      control.setID(bushLightID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [lightBush]);
   
   
     } else {
-      renderer.render(camera, vec4.fromValues(220.0/255, 230.0/255, 255.0/255, 1.0), paper, [screenQuad]);
-      color.setBleed(0.25);
-      color.setID(0.0);
+      color.setPaperColor(paperColor);
+      renderer.render(camera, paperColor, paper, [screenQuad]);
+      color.setBleed(controls.millBleed);
+      color.setID(millID);
       renderer.render(camera, vec4.fromValues(100/255, 80/255, 20/155, 1.0), color, [windmill]);
-      color.setBleed(0.2);
-      color.setID(0.5);
+      color.setBleed(controls.spinBleed);
+      color.setID(spinID);
       color.setWater(2.0);
       renderer.render(camera, vec4.fromValues(250/255, 245./255,230/255, 1.0), color, [spin]);
-      color.setBleed(0.02);
-      color.setID(0.7);
+      color.setBleed(controls.roofBleed);
+      color.setID(roofID);
       color.setWater(0.0);
-
       renderer.render(camera, vec4.fromValues(130/255, 20/255,30/255, 1.0), color, [roof]);
-      color.setBleed(0.1);
-      color.setID(0.9);
+      color.setBleed(controls.fenceBleed);
+      color.setID(fenceID);
       renderer.render(camera, vec4.fromValues(230/255, 225./255,200/255, 1.0), color, [fence]);
-      color.setBleed(0.1);
-      color.setID(0.95);
+      color.setBleed(controls.grassBleed);
+      color.setID(grassID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), color, [grass]);
 
 
@@ -429,21 +502,22 @@ function main() {
       depth.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
 
       // Render 3D scene with Depth:
-      depth.setBleed(0.2);
+      depth.setBleed(controls.millBleed);
+      depth.setID(millID);
       renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), depth, [windmill]);
-      depth.setBleed(0.2);
-      depth.setWater(0.0);
+      depth.setBleed(controls.spinBleed);
+      depth.setID(spinID);
       depth.setWater(2.0);
       renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), depth, [spin]);
-      depth.setBleed(0.02);
-      depth.setID(0.7);
+      depth.setBleed(controls.roofBleed);
+      depth.setID(roofID);
       depth.setWater(0.0);
       renderer.render(camera, vec4.fromValues(1.0 * 0.087, 2.0 * 0.064,1.0 * 0.046, 1.0), depth, [roof]);
-      depth.setBleed(0.02);
-      depth.setID(0.9);
+      depth.setBleed(controls.fenceBleed);
+      depth.setID(fenceID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [fence]);
-      depth.setBleed(0.02);
-      depth.setID(0.95);
+      depth.setBleed(controls.grassBleed);
+      depth.setID(grassID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), depth, [grass]);
       /*
       THIRD PASS: CONTROLS
@@ -459,26 +533,25 @@ function main() {
       fbrbSetup(ControlImage, fbControl, rbControl);
 
       // Render 3D scene with Control:
-      control.setBleed(0.2);
-      control.setID(0.0);
       control.setViewProjMatrix(camera.projectionMatrix);
       control.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
-
-      control.setWater(0.0);
+      
+      control.setBleed(controls.millBleed);
+      control.setID(millID);
       renderer.render(camera, vec4.fromValues(50.0/255, 165.0/255, 170.0/255, 1.0), control, [windmill]);
-      control.setBleed(0.2);
-      control.setID(0.5);
+      control.setBleed(controls.spinBleed);
+      control.setID(spinID);
       control.setWater(2.0);
       renderer.render(camera, vec4.fromValues(169.0/255, 115.0/255, 235.0/255, 1.0), control, [spin]);
-      control.setBleed(0.02);
-      control.setID(0.7);
+      control.setBleed(controls.roofBleed);
+      control.setID(roofID);
       control.setWater(0.0);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [roof]);
-      control.setBleed(0.02);
-      control.setID(0.9);
+      control.setBleed(controls.fenceBleed);
+      control.setID(fenceID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [fence]);
-      control.setBleed(0.02);
-      control.setID(0.95);
+      control.setBleed(controls.grassBleed);
+      control.setID(grassID);
       renderer.render(camera, vec4.fromValues(3.0 * 0.087, 8.0 * 0.064,3.0 * 0.046, 1.0), control, [grass]);
 
     }
@@ -499,11 +572,6 @@ function main() {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, ColorImage);
     blur.setImage1();
-
-    // gl.activeTexture(gl.TEXTURE2);
-    // gl.bindTexture(gl.TEXTURE_2D, ControlImage);
-    // blur.setImage2();
-    
 
     // Render 3D scene with blur:
     renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), blur, [screenQuad]);
@@ -541,7 +609,6 @@ function main() {
 
     if (sceneVersion == 0) {
       // bind to screen and bind texture
-      // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, StyleImage);
       gl.bindFramebuffer(gl.FRAMEBUFFER, fbStyle);
@@ -549,7 +616,6 @@ function main() {
 
       textureSetup();
       fbrbSetup(StyleImage, fbStyle, rbStyle);
-
 
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, ColorImage);
@@ -630,10 +696,6 @@ function main() {
 
       renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), clouds,[screenQuad]);
     }
-
-
-    // renderer.render(camera, vec4.fromValues(0.8, 0.7, 1.0, 1.0), paper,[screenQuad]);
-
 
     stats.end();
 
