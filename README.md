@@ -6,13 +6,27 @@
 https://gracelgilbert.github.io/watercolor-stylization/
 
 ## Source:
-[Art-directed watercolor stylization of 3D animations in real-time](Sources/Art-directed_watercolor_stylization_of_3D_animations_in_real-time.pdf)
+[Art-directed watercolor stylization of 3D animations in real-time](Sources/Art-directed_watercolor_stylization_of_3D_animations_in_real-time.pdf), by Montesdeoca, Seah, Rall, and Benvenuti.
 
-## Progress:
-### Shader pipeline setup
-There are many linked shaders that are involved in creating the watercolor sylization. I start by creating a paper texture, which is 2D layered noise to create a normal map rendered with lambertian shading. I then render geometry on top of that texture.  There are then multiple shaders. I will first describe the overall pipeline and then describe the steps in more detail below.  First the geometry goes through the "color" shader, which deforms the geometry and applies a reflectance model and renders to a texture called "colorImage".  This color shaders takes in the paper texture so the paper texture can show through the watercolors. Two more passes use the same vertex deformation but different fragment shaders, rendering out a depth map texture and a control map texture, which store parameters in the RGBA channels for later use.  Next, the texture "colorImage" is passed through a guassian blur and saved as a blurred texture, and is passed through a modified guassian blur saved as a bleeded texture. The modified gaussian blur uses the control map and the depth map. Finally, the original color texture and the two blurred textures are combined in a final pass output to the screen.
+## Description:
+This project is a real-time watercolor stylization with user controls. It takes in any input geometry and renders it to look like a realistic watercolor painting. The user has control over the paper color, how much blurring and bleeding there is overall, including the bleeding intensity per object, as well as the intensity and frequency of hand tremors. The user can choose between two scenes, a waterfall and a windmill scene, as well as two versions of the stylization, one that is pure watercolor, and one that applies an cubist effect. A volumetric raymarching feature is present in both scenes. In the waterfall scene, it serves as water spray from the base of the fall, and in the windmill scene, it serves as clouds floating above.
 
-Something I may want to change about my rendering pipeline is to have one fragment shader write to three textures, the "colorImage" texture, the depth map, and the control map, rather than having three separate shaders and render the geometry three times.  
+## External Resources:
+- I adapted Joseph Klinger's [volumetric raymarching shader](https://www.shadertoy.com/view/4sjfzw)
+- I used Neil Mendoza's [rotation matrix glsl function](http://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/)
+
+## Implementation:
+### Shader pipeline
+There are many linked shaders that are involved in creating the watercolor sylization.  Here I will describe the overall pipeline, followed below by a more detailed description of the steps:
+- The paper color is rendered to the screen to form the background for the geometry
+- Vertex deformation is applied to the input geometry in a vertex shader.  At this stage, geometry is animated and control parameters are set
+- Fragment shader applies a watercolor reflectance model and renders to a texture, "colorImage"
+- A depth map is rendered to an image
+- A control map is rendered to an image
+- Guassian blur is applied to "colorImage"
+- A depth aware guassian blur is applied to "colorImage" with the depth map and control map as texture inputs
+- The two blurring passes, the control image, and "colorImage" are passed as input to a shader that combines them, applies the normal mapping of the paper, and outputs to a texture
+- Volumetric raymarching is rendered ontop of the final texture and the result is output to the screen
 
 ### Mesh deformation
 There are two forms of mesh deformation.  The first is to achieve the effect of hand tremors and the second is for color bleeding.
