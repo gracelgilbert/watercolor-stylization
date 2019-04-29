@@ -8,11 +8,12 @@ https://gracelgilbert.github.io/watercolor-stylization/
 ## Source:
 [Art-directed watercolor stylization of 3D animations in real-time](Sources/Art-directed_watercolor_stylization_of_3D_animations_in_real-time.pdf), by Montesdeoca, Seah, Rall, and Benvenuti.
 
+## Description:
+This project is a real-time watercolor stylization with user controls. It takes in any input geometry and renders it to look like a realistic watercolor painting. The user has control over the paper color, how much blurring and bleeding there is overall, including the bleeding intensity per object, as well as the intensity and frequency of hand tremors. The user can choose between two scenes, a waterfall and a windmill scene, as well as two versions of the stylization, one that is pure watercolor, and one that applies an cubist effect. A volumetric raymarching feature is present in both scenes. In the waterfall scene, it serves as water spray from the base of the fall, and in the windmill scene, it serves as clouds floating above.
+
 ## External Resources:
 - I adapted Joseph Klinger's [volumetric raymarching shader](https://www.shadertoy.com/view/4sjfzw)
 - I used Neil Mendoza's [rotation matrix glsl function](http://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/)
-
-## Features:
 
 ## Implementation:
 ### Shader pipeline
