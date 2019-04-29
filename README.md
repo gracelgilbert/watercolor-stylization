@@ -31,7 +31,7 @@ There are many linked shaders that are involved in creating the watercolor syliz
 ### Mesh deformation
 There are two forms of mesh deformation.  The first is to achieve the effect of hand tremors and the second is for color bleeding.
 #### Hand tremors
-When painting with watercolors, edges are never perfectly straight. To mimic this effect, I deformed the edges of the mesh according to a sin curve. In the vertex shader, I evaluate a sinusoidal function at the vertex and push out the vertex along its normal by the sin function's value. I only want the deformation to occur at the edges of the geometry, so I scale how much the geometry is deformed by the dot product between the normal and the view vector. This ensures that the edges are deformed according to the sin function, but the rest of the geometry is smooth.  
+When painting with watercolors, edges are never perfectly straight. To mimic this effect, I deformed the edges of the mesh according to a sin curve. In the vertex shader, I evaluate a sinusoidal function at the vertex and push out the vertex along its normal by the sin function's value. I only want the deformation to occur at the edges of the geometry, so I scale how much the geometry is deformed by the dot product between the normal and the view vector. This ensures that the edges are deformed according to the sin function, but the rest of the geometry is smooth. The user is able to modify the frequency of the sin curve deformation, as well as the scale of it.   
 
 ![](Images/NoBleedNoHandTremors.png)
 <p align="center">
@@ -44,7 +44,7 @@ When painting with watercolors, edges are never perfectly straight. To mimic thi
 </p>
 
 #### Color bleeding
-In order to mimic pigment that bleeds, which is an effect of watercolors, the geometry is actually deformed rather than just relying on blurring.  I use an FBM function to distribute a bleeding parameter over the geometry. In places that have a high bleeding amount I push out the geometry along its vertex normals according to the bleeding parameter.  This bleeding parameter also gets store in the control shader, as it is used later in the modified guassian blurring to intensify the blur of the bled portions of geometry. 
+In order to achieve the look of pigment that bleeds, which is an effect of watercolor, the geometry is deformed rather than just relying on blurring.  I use an FBM function to distribute a bleeding parameter over the geometry. In places that have a high bleeding amount I push out the geometry along its vertex normals scaled according to the bleeding parameter.  This bleeding parameter also gets stored in the control shader, as it is used later in the modified guassian blurring to intensify the blur of the bled portions of geometry. The user can control the density of the FBM bleeding distribution function, as well as the overall scale of this function.  Additionally, each object has its own bleeding parameter, so they user can intensify or reduce the bleeding of individual pieces of geometry.  
 
 ![](Images/Control.png)
 <p align="center">
