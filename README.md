@@ -2,23 +2,25 @@
 
 ![](Images/Cover.png)
 
-## Demo Link:
+## Demo Link
 https://gracelgilbert.github.io/watercolor-stylization/
 
-## Source:
+## Source
 [Art-directed watercolor stylization of 3D animations in real-time](Sources/Art-directed_watercolor_stylization_of_3D_animations_in_real-time.pdf), by Montesdeoca, Seah, Rall, and Benvenuti.
 
-## Description:
+## Description
 This project is a real-time watercolor stylization with user controls. It takes in any input geometry and renders it to look like a realistic watercolor painting. The user has control over the paper color, how much blurring and bleeding there is overall, including the bleeding intensity per object, as well as the intensity and frequency of hand tremors. The user can choose between two scenes, a waterfall and a windmill scene, as well as two versions of the stylization, one that is pure watercolor, and one that applies an cubist effect. A volumetric raymarching feature is present in both scenes. In the waterfall scene, it serves as water spray from the base of the fall, and in the windmill scene, it serves as clouds floating above.
 
 ## External Resources:
 - I adapted Joseph Klinger's [volumetric raymarching shader](https://www.shadertoy.com/view/4sjfzw)
+- I looked at [this resource](Sources/thesis.pdf) for more information on volumetric raymarching
 - I used Neil Mendoza's [rotation matrix glsl function](http://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/)
+- I used [this source](http://dev.theomader.com/gaussian-kernel-calculator/) to calculate the gaussian kernals
 
-## Implementation:
+## Implementation
 ### Shader pipeline
 There are many linked shaders that are involved in creating the watercolor sylization.  Here I will describe the overall pipeline, followed below by a more detailed description of the steps:
-- The paper color is rendered to the screen to form the background for the geometry
+- The paper color, which is user modifiable, is rendered to the screen to form the background for the geometry
 - Vertex deformation is applied to the input geometry in a vertex shader.  At this stage, geometry is animated and control parameters are set
 - Fragment shader applies a watercolor reflectance model and renders to a texture, "colorImage"
 - A depth map is rendered to an image
@@ -65,22 +67,26 @@ The reflectance model outlined in the paper uses a similar method to lambertian 
 </p>
 ### Blurring passes
 #### Gaussian blur
-The first blurring pass is a 5 by 5 gaussian blur with a sigma value of 1.  This blur pass is used later in the edge darkening process.
+The first blurring pass is an 11 by 11 gaussian blur with a sigma value of 3.  This blur pass is used later in the edge darkening process.
 
 ![](Images/Blur.png)
 <p align="center">
   Gaussian blur pass 
 </p>
 #### Bleeding blur pass
-This blurring pass is a much stronger blur, using a 21 by 21 guassian blur with a sigma value of 20. This blur is only applied to the areas of geometry with a high bleeding parameter, specifically the areas that had been extruded out in the vertex deformation stage. This gives the effect that those areas of geometry had high levels of pigment bleeding. To only bleed in certain areas, I have an average bleed amount variable. When I iterate through the pixels that are taken into account in the gaussian blur, I sample the control map at those pixels and average out their bleeding values.  I then scale the blurred color by this average bleeding amount and scale the non blurred color by 1 - the average bleeding amount and add the two colors together. 
+This blurring pass is a much stronger blur, using a 21 by 21 guassian blur with a sigma value of 20. This blur is only applied to the areas of geometry with a high bleeding parameter, specifically the areas that had been extruded out in the vertex deformation stage. This gives the effect that those areas of geometry had high levels of pigment bleeding. When determining the blurred value of a pixel, I take the maximum blur value of all pixels within the kernel so that if a blurred section is at the edge of an object, the nearby non-blurred pixels still blur. This extends the blurring beyond the border of the object, as it would in real watercolor painting.
+
+To achieve a realistic bleeding effect, I had to take into account the depth of the geometry, which is why a depth map is passed as input. If a non bled portion of an object is painted in front of a bled object, the bleeding of the background object should not spread into the foreground object, unless they are part of the same object. This is to reflect that people generally paint a complete object, rather than painting part of an object, letting it try, and then painting the rest.  Therefore, all of the pigment would be wet and therefore be able to bleed together, regardless of depth sorting. To accomplish this, each object has a unique ID, the previously mentioned check to avoid incorrect foreground and background interaction only occurs when the two objects have distinct IDS.
 
 ![](Images/Bleed.png)
 <p align="center">
   Bleeding blur pass
 </p>
 
-### Compositing effects
-The final stage involves adding the edge darkening effect on top of the bleeded image. To do this, I start by subtracting the "ColorImage" color from the 5 by 5 gaussian blur image. I then take 1 + the maximum of the RGB channels of this subtracted image color. The final output color is the bleeded image color with each channel raised to this 1 + max(RGB) value. Taking the difference between the blurred and non blurred images isolates the edges. The closer to the edge the larger the maximum RGB value will be.  When the bleeded color is raised to this power, it will raise the edges to a higher power. Since the colors are in the 0 to 1 range, raising to the higher power darkens them more.  Therefore, this process darkens the edges, which is a realistic effect when painting with watercolors.  The strength of this edge darkening effect is scaled by a parameter that is stored in the control map and created with FBM, preventing entire edges from being darkened.  This makes it more natural looking.
+### Edge darkening
+The final stage involves adding the edge darkening effect on top of the bleeded image. To do this, I start by subtracting the "ColorImage" color from the 11 by 11 gaussian blur image. I use the maximum RGB channel of this subtracted color value to calculate a darkening parameter. The final output color is the bleeded image color with each channel raised to this darkening parameter. Taking the difference between the blurred and non blurred images isolates the edges. The closer to the edge the larger the maximum RGB value will be.  When the bleeded color is raised to this power, it will raise the edges to a higher power. Since the colors are in the 0 to 1 range, raising to the higher power darkens them more. To further heighten the edge darking, I use a process similar to how I distribute hand tremor deformation, which is dotting the normal and view vector to identify the edges of geometry from the camera's perspective. I add darkening to these areas of the geometry to create a more intense edge darkening effect. Because edge darkening occurs in a screen space operation that only has access to the rendered out texture, to access the normal and view vector values, I perform the necessary calculations instead in the original vertex shader and store the edge darkening value in the blue channel of my control map.
+
+The strength of this edge darkening effect is varied in scale according to a parameter that is stored in the control map and created with FBM, preventing entire edges from being darkened.  This makes the effect it more natural looking.
 
 ![](Images/Control.png)
 <p align="center">
@@ -92,21 +98,29 @@ The final stage involves adding the edge darkening effect on top of the bleeded 
   Final image
 </p>
 
-## Next Steps:
-### Refine bleeding 
-Right now, the bleeding algorithm does not take into account the depth of the objects.  However, the algorithm presented in the paper does use the depth map to determine which areas get blurred.  In particular, it will detect if an object is in the foregrond and blur into the background but not let the background blur into the foreground object. I plan to implement this depth aware bleeding algorithm. 
+### Paper texture and normal map
+To create the feel of rough watercolor paper, I use noise to create a heightfield, and then use that heightfield as a bump map to distort the normals of the flat image. The paper noise is worley noise layered with FBM. I sample this height map at a point an epsilon away in each direction and use these to find the gradient normal, which I apply with lambertian shading.
 
-### Refine edge darkening
-Currently, the edge darkening effect has not been working exactly as intended.  When in full effect on all edges, it creates a thin darker line near the edge but not right on the edge. To fix this, I will first try increasing the blur that I am using for edge detection so it finds a larger area as the edge to darken rather than a thin line.
-### Refine paper interaction
-Currently, the paper texture only shows through the color when it is diluted enough for the paper texture to come through.  However, in real water colors, the bump of the paper texture applies to the ares with pigment as well.  I plan to apply the normal mapping of the paper to the entire image.  The color of the paper will stay in just the diluted areas, but the bump will be applied throughout.
-### Setup environment
-Once I have the shader working, I would like to set up a scene of a waterfall, the Victoria Falls of Zimbabwe.  I plan to model simplified geometry in Maya and import that into my project. While the geometry will be fairly simple and made of relatively solid colors, this fits within the style of water color paintings. I would like to do a simple animation of the waterfalls, and perhaps some of the bushes in the foreground and background. For the waterfalls, it would not be a realistic simulation, but a noise function where the sampling is animating vertically overtime to give a falling effect. 
+### Volumetric Raymarching
+As a final pass layered on top of the watercolored geometry, I perform a volumetric raymarching to create either water spray in the waterfall scene or clouds in the windmill scene. I adapted a volumetric raymarcher from Joseph Klinger's Shadertoy shader. As a ray is marched throughout the scene, it accumulates density based on a 3D density distribution, and the larger the density, the stronger the volume's color appears. 
+
+In the waterfall scene, the density distribution is a high frequency 3D FBM distribution. This noise is animated to move vertically over time, as well as in the x and z direction according to layered sin curves to add more natural variation. The density drops off gradually according to the distance from the base of the waterfall. This this dropoff distance is distorted 3D FBM animated in all three directions so the spray does not appear static and smooth. 
+
+In the windmill scene, the density distrubition is made of a low frequency 3D FBM function.  If the density is below 0.3, it is set to 0, creating sharper stepped edges to the clouds, which adds stylization to them to fit the watercolor look. The density is also scaled by the screenspace y value so the clouds only appear at the top of the screen in the sky. They are animated in the x and z direction to appear as if they are moving towards the camera at a slight right facing angle. The light color for the clouds is warm toned, adding color to the scene rather than having pure white clouds. 
+
+### Scene construction and inspiration
+I modeled all geometry in Maya and imported each piece as a separate OBJ file to allow for object specific colors, IDs, and various blurring and bleeding parameters.
+
+The waterfall scene is inspired by the Victoria Falls of Zimbabwe, though on a smaller scale.
 
 ![](Images/VictoriaFalls.jpeg)
 <p align="center">
   Victoria Falls reference image 
 </p>
 
-### Add volumetric effect
-If time permits, I would like to add a volumetric rendering effect to create water mist coming from the waterfall and try to integrate this with the watercolor stylization. To do this, I would look at [this](Sources/thesis.pdf) paper for reference, along with [this](https://www.shadertoy.com/view/4sjfzw) shadertoy example.
+### Cubism feature
+A combination of accidents and mistakes led to an interesting variation of the watercolor shader that created a cubism effect. I decided to keep this as a toggle option. The vertex deformation of this effect is acheived by making the hand tremor deformation extreme, creating sharp, square extrusions. The shading for this effect is created by using incorrect parameters in calls to smoothstep in the 3D interpolation function used in the noise calculation for turbulence distribution.
+
+## Things to improve
+- Right now, in order to apply the hand deformations, the input geometry must be highly subdivided in order to allow for smooth, high frequency deformations to it. However, this involves denser geometry than really necessary for the level of detail in the final image. A strategy that may improve this is to use a geometry shader that tesselates the geometry only in the areas that require the high level detail for vertex deformation. This would allow for low poly geometry to still have smooth deformation, as higher detail would be created in areas that need to be deformed. 
+- Currently, the positioning of the volumetric effects depend on the camera position and gets distorted or out of place with certain camera movements. A potential way to improve this would be to project the worldspace positioning of the density function to camera space so it is consistent with the camera movements.
