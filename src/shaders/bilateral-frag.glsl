@@ -66,7 +66,7 @@ void main() {
           scale = 0.0;
         } 
         if (currDepth.r < depthSample.r && controlSample.r < 0.1 && currControl.a != controlSample.a) {
-          // If current object is closer than blurred, current object is not blurred, and current object is different from current kernel object
+          // If current pixel is closer than kernel, current object is not blurred, and current object is different from current kernel object
           colorLost += scale;
           scale = 0.0;
         } 
