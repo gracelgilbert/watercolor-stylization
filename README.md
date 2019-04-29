@@ -52,7 +52,7 @@ In order to achieve the look of pigment that bleeds, which is an effect of water
 </p>
 
 ### Reflectance model
-The reflectance model outlined in the paper uses a similar method to lambertian shading, but modifies it to look more painterly. The dot product of the normal and light vector are altered by a dilution term to simulate color dilution.  This term determines where dilution occurs most heavily, and these portions of the geometry are lightened and blended with the paper texture. The reflectance model ensures that the entire geometry is in color and brightens the highlight areas rather than darkening the shadowed areas. Noise is added to this brightening effect to give the effect of turbulence in the watercolors. The paper suggests using hand painted noise to make the turbulence more natural looking, but at least for now, I just use 3D FBM to create the turbulence effect.
+The reflectance model outlined in the paper uses a similar method to lambertian shading, but modifies it to look more painterly. The dot product of the normal and light vector are altered by a dilution term to simulate color dilution. The color dilution occurs on the highlights of the surface, which is lightened and blended with the paper texture. The reflectance model ensures that the entire geometry is in color and brightens the highlight areas rather than darkening the shadowed areas. Noise is added to this dilution effect to give the effect of turbulence in the watercolors. The paper suggests using hand painted noise to make the turbulence more natural looking; however, I use layers of 3D FBM to create the turbulence effect.
 
 ![](Images/Color.png)
 <p align="center">
