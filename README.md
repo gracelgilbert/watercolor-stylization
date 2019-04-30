@@ -79,7 +79,9 @@ The reflectance model outlined in the paper uses a similar method to lambertian 
 <p align="center">
   Reflectance model without turbulence effect (on test geometry in progress)
 </p>
+
 ### Blurring passes
+
 #### Gaussian blur
 The first blurring pass is an 11 by 11 gaussian blur with a sigma value of 3.  This blur pass is used later in the edge darkening process.
 
