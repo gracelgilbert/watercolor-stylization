@@ -11,6 +11,7 @@ out vec4 out_Col;
 uniform vec4 u_CameraPos;
 uniform sampler2D u_Image1; // Full image
 uniform sampler2D u_Image2; // Depth image
+uniform float u_ViewMode;
 
 uniform mat4 u_Model;       // The matrix that defines the transformation of the
                             // object we're rendering. In this assignment,
@@ -308,14 +309,18 @@ void main()
     float x = 0.5 * (fs_Pos.x + 1.0);
     float y = 0.5 * (fs_Pos.y + 1.0);
     vec2 screenPoint = (fs_Pos.xy);
-    
-    // Compute ray direction
-    vec3 rayOrigin = u_CameraPos.xyz;
-    vec3 rayDirection = CastRay(screenPoint, rayOrigin);
-    
-    // Raymarch the fbm
-    vec4 finalColor = RaymarchScene(rayOrigin, rayDirection);
-    
-    // out_Col = vec4(ToneMap(finalColor.xyz), 1.0);
-    out_Col = vec4(finalColor.rgb, 1.0);
+
+    if (u_ViewMode < 0.5) {
+      // Compute ray direction
+      vec3 rayOrigin = u_CameraPos.xyz;
+      vec3 rayDirection = CastRay(screenPoint, rayOrigin);
+      
+      // Raymarch the fbm
+      vec4 finalColor = RaymarchScene(rayOrigin, rayDirection);
+      
+      // out_Col = vec4(ToneMap(finalColor.xyz), 1.0);
+      out_Col = vec4(finalColor.rgb, 1.0);
+    } else {
+      out_Col = texture(u_Image1, vec2(x,  y));
+    }
 }

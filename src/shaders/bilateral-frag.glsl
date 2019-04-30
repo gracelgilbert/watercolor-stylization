@@ -6,6 +6,7 @@ uniform vec2 u_Dimensions;
 uniform sampler2D u_Image1; // Color
 uniform sampler2D u_Image2; // depth
 uniform sampler2D u_Image3; // control
+uniform float u_ViewMode;
 
 
 
@@ -47,74 +48,51 @@ void main() {
   vec4 depthSample = texture(u_Image2, vec2(x,y));
   vec4 controlSample = texture(u_Image3, vec2(x,y));
 
+  if (u_ViewMode > 4.5) {
+    out_Col = depthSample;
+  } else {
 
-  vec4 accumColor = vec4(0.0);
-  float colorLost = 0.0;
+    vec4 accumColor = vec4(0.0);
+    float colorLost = 0.0;
 
-  float totalBlur = 0.0;
-  int count = 0;
-  for (int i = -10; i <= 10; i++) {
-    for (int j = -10; j <= 10; j++) {
-        vec4 curr_color = texture(u_Image1, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
-        vec4 currDepth = texture(u_Image2, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
-        vec4 currControl = texture(u_Image3, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
-        float scale = array[count];        
+    float totalBlur = 0.0;
+    int count = 0;
+    for (int i = -10; i <= 10; i++) {
+      for (int j = -10; j <= 10; j++) {
+          vec4 curr_color = texture(u_Image1, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
+          vec4 currDepth = texture(u_Image2, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
+          vec4 currControl = texture(u_Image3, vec2(x + float(i) * (pixDimx), y + float(j) * (pixDimy)));
+          float scale = array[count];        
 
-        if (currDepth.r > depthSample.r && currControl.r < 0.1 && currControl.a != controlSample.a) {
-          // If current pixel is farther than kernel, current object is not blurred, and current object is different from current kernel object
-          colorLost += scale;
-          scale = 0.0;
-        } 
-        if (currDepth.r < depthSample.r && controlSample.r < 0.1 && currControl.a != controlSample.a) {
-          // If current pixel is closer than kernel, current object is not blurred, and current object is different from current kernel object
-          colorLost += scale;
-          scale = 0.0;
-        } 
-        // totalBlur += currControl.r;
-        if (currControl.r > totalBlur) {
-          totalBlur = currControl.r;
-        }
+          if (currDepth.r > depthSample.r && currControl.r < 0.1 && currControl.a != controlSample.a) {
+            // If current pixel is farther than kernel, current object is not blurred, and current object is different from current kernel object
+            colorLost += scale;
+            scale = 0.0;
+          } 
+          if (currDepth.r < depthSample.r && controlSample.r < 0.1 && currControl.a != controlSample.a) {
+            // If current pixel is closer than kernel, current object is not blurred, and current object is different from current kernel object
+            colorLost += scale;
+            scale = 0.0;
+          } 
+          // totalBlur += currControl.r;
+          if (currControl.r > totalBlur) {
+            totalBlur = currControl.r;
+          }
 
-        accumColor = accumColor + (scale * curr_color);
-        count++;
+          accumColor = accumColor + (scale * curr_color);
+          count++;
 
+      }
     }
+    if (colorLost > 0.0) {
+      accumColor += colorSample * colorLost;
+    }
+
+    float avgBlur = totalBlur / 441.0;
+    float blurrAmount = clamp(pow(mix(0.0, 1.0, totalBlur * 1.0), 1.0), 0.0, 1.0);
+
+    vec4 finalColor = mix(colorSample, accumColor, totalBlur);
+
+    out_Col = vec4(finalColor.rgb, 1.0);
   }
-  if (colorLost > 0.0) {
-    accumColor += colorSample * colorLost;
-    // accumColor = vec4(1.0);
-  }
-
-  float avgBlur = totalBlur / 441.0;
-  float blurrAmount = clamp(pow(mix(0.0, 1.0, totalBlur * 1.0), 1.0), 0.0, 1.0);
-  // if (controlSample.r < 0.20000001) {
-  //   blurrAmount = 0.0;
-  // }
-
-  vec4 finalColor = mix(colorSample, accumColor, totalBlur);
-  
-  // float T = 0.5;
-  // for (int i = -10; i <= 10; i++) {
-  //   if (true) { // This will sample control mask for bleeding parameter
-  //     bool bleed = false;
-  //     bool sourceBehind = false;
-  //     if (texture(u_Image2, vec2(x, y)).r - T > texture(u_Image2, vec2(x + float(i) * pixDimx, y)).r) {
-  //       sourceBehind = true;
-  //     }
-  //     if (true && sourceBehind) {
-  //       bleed = true;
-  //     }
-  //     if (true && !sourceBehind) {
-  //       bleed = true;
-  //     }
-  //     if (true) {
-  //       accumColor = accumColor + texture(u_Image1, vec2(x, y)) * array[i + 10];
-  //     }
-  //   }
-  // }
-
-  // accumColor = texture(u_Image1, vec2( x,  y));
-  out_Col = vec4(finalColor.rgb, 1.0);
-  // out_Col = vec4(controlSample.aaa, 1.0);
-
 }
