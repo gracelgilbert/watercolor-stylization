@@ -110,7 +110,7 @@ The final stage involves adding the edge darkening effect on top of the bleeded 
 
 The strength of this edge darkening effect is varied in scale according to a parameter that is stored in the control map and created with FBM, preventing entire edges from being darkened.  This makes the effect it more natural looking.
 
-![](Images/Control.png)
+![](Images/ControlMap.png)
 <p align="center">
   Control texture, where Green determines edge darkening and blue represents grazing angle
 </p>
