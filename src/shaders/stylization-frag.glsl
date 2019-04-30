@@ -8,6 +8,7 @@ uniform sampler2D u_Image2; // Blurred image
 uniform sampler2D u_Image3; // Bleeded image
 uniform sampler2D u_Image4; // Control image
 uniform float u_ViewMode;
+uniform float u_PaperRough;
 
 float random1( vec2 p , vec2 seed) {
   return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);
@@ -96,7 +97,7 @@ out vec4 out_Col;
 float getHeight(vec2 pos) {
     float height = 1.0 * pow(1.0 - computeWorley(pos.x, pos.y, 1800.0, 1000.0), 0.3);
     height += 0.6 * (1.0 - pow(fbm(pos.x, pos.y, 1.0, 0.01, 0.01), 0.5));
-    return clamp(height, 0.0, 1.0);
+    return clamp(u_PaperRough * height, 0.0, 1.0);
 }
 const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
 

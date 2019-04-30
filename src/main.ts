@@ -30,6 +30,7 @@ const controls = {
   bleedIntensity: 1.0,
   paperColor: "#fffcf2",
   viewMode: 0,
+  paperRoughness: 1.0,
 };
 
 // let sphere: Mesh;
@@ -158,7 +159,7 @@ function main() {
   gui.add(controls, 'scene', {Waterfall: 0, Windmill: 1});
   gui.add(controls, 'style', {Watercolor: 0, Cubism: 1});
   gui.add(controls, 'viewMode', {Full: 0, Color: 1, Control: 2, Blur: 3, Bleed: 4, Depth: 5});
-
+  gui.add(controls, 'paperRoughness', 0.0, 1.0).step(0.1);
   gui.addColor(controls, 'paperColor');
   gui.add(controls, 'waterBleed', 0.0, 1.0).step(0.05);
   gui.add(controls, 'rockBleed', 0.0, 1.0).step(0.05);
@@ -376,6 +377,7 @@ function main() {
     bilateral.setViewMode(controls.viewMode);
     clouds.setViewMode(controls.viewMode);
     spray.setViewMode(controls.viewMode);
+    stylization.setRoughness(controls.paperRoughness);
 
 
     spray.setCameraPos(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));

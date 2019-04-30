@@ -47,6 +47,7 @@ class ShaderProgram {
   unifStyle: WebGLUniformLocation;
   unifPaperColor: WebGLUniformLocation;
   unifViewMode: WebGLUniformLocation;
+  unifPaperBump: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -88,9 +89,7 @@ class ShaderProgram {
     this.unifPaperColor = gl.getUniformLocation(this.prog, "u_PaperCol");
 
     this.unifViewMode   = gl.getUniformLocation(this.prog, "u_ViewMode");
-
-
-
+    this.unifPaperBump  = gl.getUniformLocation(this.prog, "u_PaperRough");
   }
 
   use() {
@@ -115,6 +114,15 @@ class ShaderProgram {
     if(this.unifBleedScale != -1)
     {
       gl.uniform1f(this.unifBleedScale, bleed);
+    }
+  }
+
+  setRoughness(r: number) {
+    this.use();
+
+    if(this.unifPaperBump != -1)
+    {
+      gl.uniform1f(this.unifPaperBump, r);
     }
   }
 
