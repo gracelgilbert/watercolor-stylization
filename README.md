@@ -1,6 +1,8 @@
 # Watercolor Stylization, Grace Gilbert (gracegi)
 
-![](Images/Cover.png)
+![](Images/WindmillCover.png)
+
+![](Images/WaterfallCover.png)
 
 ## Demo Link
 https://gracelgilbert.github.io/watercolor-stylization/
@@ -30,6 +32,8 @@ There are many linked shaders that are involved in creating the watercolor syliz
 - The two blurring passes, the control image, and "colorImage" are passed as input to a shader that combines them, applies the normal mapping of the paper, and outputs to a texture
 - Volumetric raymarching is rendered ontop of the final texture and the result is output to the screen
 
+The user can toggle which render pass is in view.
+
 ### Mesh deformation
 There are two forms of mesh deformation.  The first is to achieve the effect of hand tremors and the second is for color bleeding.
 #### Hand tremors
@@ -37,39 +41,49 @@ When painting with watercolors, edges are never perfectly straight. To mimic thi
 
 ![](Images/NoBleedNoHandTremors.png)
 <p align="center">
-  Without hand tremor vertex deformation
+  Without hand tremor vertex deformation (on test geometry in progress)
 </p>
 
 ![](Images/NoBleed.png)
 <p align="center">
-  With hand tremore deformation
+  With hand tremor deformation (on test geometry in progress) 
 </p>
 
 #### Color bleeding
 In order to achieve the look of pigment that bleeds, which is an effect of watercolor, the geometry is deformed rather than just relying on blurring.  I use an FBM function to distribute a bleeding parameter over the geometry. In places that have a high bleeding amount I push out the geometry along its vertex normals scaled according to the bleeding parameter.  This bleeding parameter also gets stored in the control shader, as it is used later in the modified guassian blurring to intensify the blur of the bled portions of geometry. The user can control the density of the FBM bleeding distribution function, as well as the overall scale of this function.  Additionally, each object has its own bleeding parameter, so they user can intensify or reduce the bleeding of individual pieces of geometry.  
 
-![](Images/Control.png)
+![](Images/ControlMap.png)
 <p align="center">
-  Control texture, where Red determines color bleeding intensity 
+  Control map, where red determines color bleeding intensity 
+</p>
+
+![](Images/BleedingAdjust.png)
+<p align="center">
+  High frequency, high intensity bleeding
+</p>
+
+![](Images/noBleedWaterfall.png)
+<p align="center">
+  No bleeding
 </p>
 
 ### Reflectance model
 The reflectance model outlined in the paper uses a similar method to lambertian shading, but modifies it to look more painterly. The dot product of the normal and light vector are altered by a dilution term to simulate color dilution. The color dilution occurs on the highlights of the surface, which is lightened and blended with the paper texture. The reflectance model ensures that the entire geometry is in color and brightens the highlight areas rather than darkening the shadowed areas. Noise is added to this dilution effect to give the effect of turbulence in the watercolors. The paper suggests using hand painted noise to make the turbulence more natural looking; however, I use layers of 3D FBM to create the turbulence effect.
 
-![](Images/Color.png)
+![](Images/ColorImage.png)
 <p align="center">
-  Full color texture with hand tremor and bleeding deformation and reflectance model
+  Full color texture with hand tremor and bleeding deformation and reflectance model but no blurring
 </p>
 
 ![](Images/NoTurbulence.png)
 <p align="center">
-  Reflectance model without turbulence effect 
+  Reflectance model without turbulence effect (on test geometry in progress)
 </p>
 ### Blurring passes
 #### Gaussian blur
 The first blurring pass is an 11 by 11 gaussian blur with a sigma value of 3.  This blur pass is used later in the edge darkening process.
 
-![](Images/Blur.png)
+![](Images/BlurWaterfall.png)
 <p align="center">
   Gaussian blur pass 
 </p>
@@ -78,9 +92,14 @@ This blurring pass is a much stronger blur, using a 21 by 21 guassian blur with 
 
 To achieve a realistic bleeding effect, I had to take into account the depth of the geometry, which is why a depth map is passed as input. If a non bled portion of an object is painted in front of a bled object, the bleeding of the background object should not spread into the foreground object, unless they are part of the same object. This is to reflect that people generally paint a complete object, rather than painting part of an object, letting it try, and then painting the rest.  Therefore, all of the pigment would be wet and therefore be able to bleed together, regardless of depth sorting. To accomplish this, each object has a unique ID, the previously mentioned check to avoid incorrect foreground and background interaction only occurs when the two objects have distinct IDS.
 
-![](Images/Bleed.png)
+![](Images/BleedWaterfall.png)
 <p align="center">
   Bleeding blur pass
+</p>
+
+![](Images/DepthMap.png)
+<p align="center">
+  Depth Map
 </p>
 
 ### Edge darkening
@@ -90,16 +109,16 @@ The strength of this edge darkening effect is varied in scale according to a par
 
 ![](Images/Control.png)
 <p align="center">
-  Control texture, where Green determines edge darkening
-</p>
-
-![](Images/Cover.png)
-<p align="center">
-  Final image
+  Control texture, where Green determines edge darkening and blue represents grazing angle
 </p>
 
 ### Paper texture and normal map
 To create the feel of rough watercolor paper, I use noise to create a heightfield, and then use that heightfield as a bump map to distort the normals of the flat image. The paper noise is worley noise layered with FBM. I sample this height map at a point an epsilon away in each direction and use these to find the gradient normal, which I apply with lambertian shading.
+
+![](Images/PaperChange.png)
+<p align="center">
+  Modified paper color 
+</p>
 
 ### Volumetric Raymarching
 As a final pass layered on top of the watercolored geometry, I perform a volumetric raymarching to create either water spray in the waterfall scene or clouds in the windmill scene. I adapted a volumetric raymarcher from Joseph Klinger's Shadertoy shader. As a ray is marched throughout the scene, it accumulates density based on a 3D density distribution, and the larger the density, the stronger the volume's color appears. 
@@ -120,6 +139,16 @@ The waterfall scene is inspired by the Victoria Falls of Zimbabwe, though on a s
 
 ### Cubism feature
 A combination of accidents and mistakes led to an interesting variation of the watercolor shader that created a cubism effect. I decided to keep this as a toggle option. The vertex deformation of this effect is acheived by making the hand tremor deformation extreme, creating sharp, square extrusions. The shading for this effect is created by using incorrect parameters in calls to smoothstep in the 3D interpolation function used in the noise calculation for turbulence distribution.
+
+![](Images/WaterfallCubism.png)
+<p align="center">
+  Cubism effect on waterfall scene
+</p>
+
+![](Images/WindmillCubism.png)
+<p align="center">
+  Cubism effect on windmill scene
+</p>
 
 ## Things to improve
 - Right now, in order to apply the hand deformations, the input geometry must be highly subdivided in order to allow for smooth, high frequency deformations to it. However, this involves denser geometry than really necessary for the level of detail in the final image. A strategy that may improve this is to use a geometry shader that tesselates the geometry only in the areas that require the high level detail for vertex deformation. This would allow for low poly geometry to still have smooth deformation, as higher detail would be created in areas that need to be deformed. 
