@@ -89,6 +89,7 @@ The first blurring pass is an 11 by 11 gaussian blur with a sigma value of 3.  T
 <p align="center">
   Gaussian blur pass 
 </p>
+
 #### Bleeding blur pass
 This blurring pass is a much stronger blur, using a 21 by 21 guassian blur with a sigma value of 20. This blur is only applied to the areas of geometry with a high bleeding parameter, specifically the areas that had been extruded out in the vertex deformation stage. This gives the effect that those areas of geometry had high levels of pigment bleeding. When determining the blurred value of a pixel, I take the maximum blur value of all pixels within the kernel so that if a blurred section is at the edge of an object, the nearby non-blurred pixels still blur. This extends the blurring beyond the border of the object, as it would in real watercolor painting.
 
