@@ -116,7 +116,7 @@ The strength of this edge darkening effect is varied in scale according to a par
 </p>
 
 ### Paper texture and normal map
-To create the feel of rough watercolor paper, I use noise to create a heightfield, and then use that heightfield as a bump map to distort the normals of the flat image. The paper noise is worley noise layered with FBM. I sample this height map at a point an epsilon away in each direction and use these to find the gradient normal, which I apply with lambertian shading.
+To create the feel of rough watercolor paper, I use noise to create a heightfield, and then use that heightfield as a bump map to distort the normals of the flat image. The paper noise is worley noise layered with FBM. I sample this height map at a point an epsilon away in each direction and use these to find the gradient normal, which I apply with lambertian shading. The user can modify how smooth or rough the paper texture is.
 
 ![](Images/PaperChange.png)
 <p align="center">
